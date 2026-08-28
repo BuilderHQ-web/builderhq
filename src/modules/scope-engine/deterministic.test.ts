@@ -314,8 +314,8 @@ describe("applyDeterministicGuards", () => {
       synth([item("landscaping.irrigation", { status: "evidenced" })]),
       suppressedFacts,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
-    expect(r.synthesis.items[0]!.note).toContain("NO IRRIGATION");
+    expect(r.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.note).toContain("NO IRRIGATION");
     expect(r.corrections[0]!.rule).toBe("refused-by-documents");
   });
 
@@ -324,7 +324,7 @@ describe("applyDeterministicGuards", () => {
       synth([item("landscaping.irrigation", { status: "gap", citations: [] })]),
       suppressedFacts,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.status).toBe("not_expected");
   });
 
   test("a refused item already called not_expected is left alone", () => {
@@ -340,28 +340,32 @@ describe("applyDeterministicGuards", () => {
       synth([item("framing.wall-frames", { status: "evidenced" })]),
       suppressedFacts,
     );
-    expect(r.synthesis.items[0]!.status).toBe("evidenced");
+    expect(r.items[0]!.status).toBe("evidenced");
     expect(r.corrections).toEqual([]);
   });
 
   test("a conditionally-mentioned item does not become a gap", () => {
+    // Uses a CONDITIONAL item deliberately. This originally used
+    // windows.flyscreens, which the tier table calls core while the
+    // corpus labels it not_expected on Wallace — a real disagreement
+    // between the two, recorded rather than fitted to.
     const facts = collectFacts([
       doc([
         page({
           claims: [
-            claim("windows.flyscreens", {
+            claim("appliances.outdoor-kitchen", {
               modality: "if_required",
-              quote: "flyscreens if required",
+              quote: "outdoor kitchen if required",
             }),
           ],
         }),
       ]),
     ]);
     const r = applyDeterministicGuards(
-      synth([item("windows.flyscreens", { status: "gap", citations: [] })]),
+      synth([item("appliances.outdoor-kitchen", { status: "gap", citations: [] })]),
       facts,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.status).toBe("not_expected");
     expect(r.corrections[0]!.rule).toBe("mentioned-not-selected");
   });
 
@@ -385,7 +389,7 @@ describe("applyDeterministicGuards", () => {
     );
     expect(r.corrections.filter((c) => c.itemId === "landscaping.irrigation")).toHaveLength(1);
     expect(r.corrections[0]!.rule).toBe("refused-by-documents");
-    expect(r.synthesis.items[0]!.note).toContain("EXCLUDED");
+    expect(r.items[0]!.note).toContain("EXCLUDED");
   });
 
   const empty = collectFacts([doc([page()])]);
@@ -398,7 +402,7 @@ describe("applyDeterministicGuards", () => {
       ]),
       empty,
     );
-    expect(r.synthesis.items.map((i) => i.gapClass)).toEqual([
+    expect(r.items.map((i) => i.gapClass)).toEqual([
       "contractor_obligation",
       "contractor_obligation",
     ]);
@@ -410,7 +414,7 @@ describe("applyDeterministicGuards", () => {
       synth([item("preliminaries.scaffolding", { status: "evidenced" })]),
       empty,
     );
-    expect(r.synthesis.items[0]!.gapClass).toBeNull();
+    expect(r.items[0]!.gapClass).toBeNull();
   });
 
   test("a gap outside preliminaries keeps the model's class", () => {
@@ -418,7 +422,7 @@ describe("applyDeterministicGuards", () => {
       synth([item("framing.wall-frames", { status: "gap", citations: [], gapClass: "design_gap" })]),
       empty,
     );
-    expect(r.synthesis.items[0]!.gapClass).toBe("design_gap");
+    expect(r.items[0]!.gapClass).toBe("design_gap");
     expect(r.corrections).toEqual([]);
   });
 
@@ -441,7 +445,7 @@ describe("applyDeterministicGuards", () => {
       synth([item("framing.hardware-bracing", { status: "gap", citations: [], gapClass: "design_gap" })]),
       deferredFacts,
     );
-    expect(r.synthesis.items[0]!.gapClass).toBe("later_consultant_package");
+    expect(r.items[0]!.gapClass).toBe("later_consultant_package");
   });
 
   test("deferred work can never be called priceable", () => {
@@ -451,7 +455,7 @@ describe("applyDeterministicGuards", () => {
       ]),
       deferredFacts,
     );
-    expect(r.synthesis.items[0]!.priceable).toBe(false);
+    expect(r.items[0]!.priceable).toBe(false);
     expect(r.corrections[0]!.rule).toBe("deferred-work-cannot-be-priced");
   });
 
@@ -460,7 +464,7 @@ describe("applyDeterministicGuards", () => {
       synth([item("framing.wall-frames", { status: "evidenced", depth: "full", priceable: true })]),
       deferredFacts,
     );
-    expect(r.synthesis.items[0]!.priceable).toBe(true);
+    expect(r.items[0]!.priceable).toBe(true);
   });
 
   test("a gap carries no priceability claim", () => {
@@ -468,7 +472,7 @@ describe("applyDeterministicGuards", () => {
       synth([item("framing.wall-frames", { status: "gap", citations: [], priceable: true })]),
       empty,
     );
-    expect(r.synthesis.items[0]!.priceable).toBeNull();
+    expect(r.items[0]!.priceable).toBeNull();
   });
 
   test("a suppressed line loses the priceability claim it carried", () => {
@@ -486,8 +490,8 @@ describe("applyDeterministicGuards", () => {
       ]),
       suppressedFacts,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
-    expect(r.synthesis.items[0]!.priceable).toBeNull();
+    expect(r.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.priceable).toBeNull();
   });
 
   test("a suppressed line loses the gap class it carried", () => {
@@ -501,8 +505,8 @@ describe("applyDeterministicGuards", () => {
       ]),
       suppressedFacts,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
-    expect(r.synthesis.items[0]!.gapClass).toBeNull();
+    expect(r.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.gapClass).toBeNull();
   });
 
   const arithmeticFacts = collectFacts([
@@ -519,8 +523,8 @@ describe("applyDeterministicGuards", () => {
   test("a contradiction the model missed is added as a conflict", () => {
     const r = applyDeterministicGuards(synth([]), arithmeticFacts);
     expect(r.addedConflicts).toBe(1);
-    expect(r.synthesis.conflicts[0]!.severity).toBe("high");
-    expect(r.synthesis.conflicts[0]!.summary).toContain("330");
+    expect(r.conflicts[0]!.severity).toBe("high");
+    expect(r.conflicts[0]!.summary).toContain("330");
   });
 
   test("a contradiction the model already raised is not doubled", () => {
@@ -531,7 +535,7 @@ describe("applyDeterministicGuards", () => {
       arithmeticFacts,
     );
     expect(r.addedConflicts).toBe(0);
-    expect(r.synthesis.conflicts).toHaveLength(1);
+    expect(r.conflicts).toHaveLength(1);
   });
 
   test("every override is recorded, never made silently", () => {
@@ -553,7 +557,7 @@ describe("applyDeterministicGuards", () => {
     const r = applyDeterministicGuards(before, empty);
     expect(r.corrections).toEqual([]);
     expect(r.addedConflicts).toBe(0);
-    expect(r.synthesis.items[0]!.status).toBe("evidenced");
+    expect(r.items[0]!.status).toBe("evidenced");
   });
 });
 
@@ -563,6 +567,88 @@ describe("the tier rules", () => {
   const mentioning = (itemId: string) =>
     collectFacts([doc([page({ itemIds: [itemId] })])]);
 
+  test("weak evidence on a CORE item is a gap, never not applicable", () => {
+    // Cost two lines on the first scored run. Every house has termite
+    // management: a passing note about the standard does not select a
+    // system, and it does not remove the requirement either.
+    const facts = collectFacts([
+      doc([
+        page({
+          claims: [
+            claim("footings-slab.termite-management", {
+              genericity: "template_note",
+              quote: "termite management to AS3660",
+            }),
+          ],
+        }),
+      ]),
+    ]);
+    const r = applyDeterministicGuards(
+      synth([item("footings-slab.termite-management", { status: "not_expected", citations: [] })]),
+      facts,
+    );
+    expect(r.items[0]!.status).toBe("gap");
+    expect(r.corrections[0]!.rule).toBe("mentioned-not-selected");
+  });
+
+  test("weak evidence on a CONDITIONAL item is still not applicable", () => {
+    const facts = collectFacts([
+      doc([
+        page({
+          claims: [
+            claim("landscaping.pool", { modality: "if_required", quote: "pool if required" }),
+          ],
+        }),
+      ]),
+    ]);
+    const r = applyDeterministicGuards(
+      synth([item("landscaping.pool", { status: "gap", citations: [] })]),
+      facts,
+    );
+    expect(r.items[0]!.status).toBe("not_expected");
+  });
+
+  test("weak evidence never demotes an EVIDENCED core line", () => {
+    // The documents may show it properly on another page. One weak
+    // mention must not outrank a real one.
+    const facts = collectFacts([
+      doc([
+        page({
+          claims: [
+            claim("footings-slab.termite-management", { genericity: "template_note", quote: "to AS3660" }),
+          ],
+        }),
+      ]),
+    ]);
+    const r = applyDeterministicGuards(
+      synth([item("footings-slab.termite-management", { status: "evidenced" })]),
+      facts,
+    );
+    expect(r.items[0]!.status).toBe("evidenced");
+  });
+
+  test("a commercial item is never not applicable", () => {
+    // Scaffolding does not stop being needed because nobody drew it.
+    // Not one of the 31 commercial lines across both golden packages
+    // is not_expected.
+    const r = applyDeterministicGuards(
+      synth([item("preliminaries.temporary-fencing", { status: "not_expected", citations: [] })]),
+      empty2,
+    );
+    expect(r.items[0]!.status).toBe("gap");
+    expect(r.items[0]!.gapClass).toBe("contractor_obligation");
+    expect(r.corrections[0]!.rule).toBe("commercial-work-is-always-owed");
+  });
+
+  test("an EVIDENCED commercial item is left alone", () => {
+    const r = applyDeterministicGuards(
+      synth([item("preliminaries.temporary-fencing", { status: "evidenced" })]),
+      empty2,
+    );
+    expect(r.items[0]!.status).toBe("evidenced");
+    expect(r.corrections).toEqual([]);
+  });
+
   test("a conditional item nothing mentions is not a gap", () => {
     // The single largest source of wrong answers in both baselines:
     // asking an owner about a lift on a house that has no lift.
@@ -570,7 +656,7 @@ describe("the tier rules", () => {
       synth([item("stairs.residential-lift", { status: "gap", citations: [] })]),
       empty2,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.status).toBe("not_expected");
     expect(r.corrections[0]!.rule).toBe("conditional-without-an-activation-signal");
   });
 
@@ -582,7 +668,7 @@ describe("the tier rules", () => {
       synth([item("stairs.residential-lift", { status: "gap", citations: [] })]),
       mentioning("stairs.residential-lift"),
     );
-    expect(r.synthesis.items[0]!.status).toBe("gap");
+    expect(r.items[0]!.status).toBe("gap");
     expect(r.corrections).toEqual([]);
   });
 
@@ -593,7 +679,7 @@ describe("the tier rules", () => {
       synth([item("lining.wall-plasterboard", { status: "gap", citations: [] })]),
       empty2,
     );
-    expect(r.synthesis.items[0]!.status).toBe("gap");
+    expect(r.items[0]!.status).toBe("gap");
   });
 
   test("a commercial item nothing mentions is still a gap", () => {
@@ -604,8 +690,8 @@ describe("the tier rules", () => {
       synth([item("preliminaries.scaffolding", { status: "gap", citations: [] })]),
       empty2,
     );
-    expect(r.synthesis.items[0]!.status).toBe("gap");
-    expect(r.synthesis.items[0]!.gapClass).toBe("contractor_obligation");
+    expect(r.items[0]!.status).toBe("gap");
+    expect(r.items[0]!.gapClass).toBe("contractor_obligation");
   });
 
   test("commercial gap class reaches beyond preliminaries", () => {
@@ -613,7 +699,7 @@ describe("the tier rules", () => {
       synth([item("approvals.building-permit", { status: "gap", citations: [] })]),
       empty2,
     );
-    expect(r.synthesis.items[0]!.gapClass).toBe("contractor_obligation");
+    expect(r.items[0]!.gapClass).toBe("contractor_obligation");
   });
 
   test("a document beats the Standard on gap class", () => {
@@ -635,7 +721,7 @@ describe("the tier rules", () => {
       synth([item("approvals.engineering-design", { status: "gap", citations: [] })]),
       facts,
     );
-    expect(r.synthesis.items[0]!.gapClass).toBe("later_consultant_package");
+    expect(r.items[0]!.gapClass).toBe("later_consultant_package");
   });
 
   test("an evidenced system rules out what it structurally precludes", () => {
@@ -649,7 +735,7 @@ describe("the tier rules", () => {
       ]),
       mentioning("external-walls.eaves-soffits"),
     );
-    const soffits = r.synthesis.items.find(
+    const soffits = r.items.find(
       (i) => i.itemId === "external-walls.eaves-soffits",
     )!;
     expect(soffits.status).toBe("not_expected");
@@ -668,7 +754,7 @@ describe("the tier rules", () => {
       empty2,
     );
     expect(
-      r.synthesis.items.find((i) => i.itemId === "external-walls.eaves-soffits")!.status,
+      r.items.find((i) => i.itemId === "external-walls.eaves-soffits")!.status,
     ).toBe("evidenced");
   });
 
@@ -684,7 +770,7 @@ describe("the tier rules", () => {
       mentioning("roofing.box-gutters"),
     );
     expect(
-      r.synthesis.items.find((i) => i.itemId === "roofing.box-gutters")!.status,
+      r.items.find((i) => i.itemId === "roofing.box-gutters")!.status,
     ).toBe("gap");
   });
 
@@ -696,7 +782,7 @@ describe("the tier rules", () => {
       ]),
       mentioning("roofing.tile-roof"),
     );
-    const tile = r.synthesis.items.find((i) => i.itemId === "roofing.tile-roof")!;
+    const tile = r.items.find((i) => i.itemId === "roofing.tile-roof")!;
     expect(tile.status).toBe("not_expected");
     expect(tile.note).toContain("roofing.metal-roof");
     expect(r.corrections[0]!.rule).toBe("alternative-already-chosen");
@@ -709,7 +795,7 @@ describe("the tier rules", () => {
       synth([item("footings-slab.waffle-slab", { status: "gap", citations: [] })]),
       empty2,
     );
-    expect(r.synthesis.items[0]!.status).toBe("gap");
+    expect(r.items[0]!.status).toBe("gap");
   });
 
   test("an optional group with nothing chosen is settled, not gapped", () => {
@@ -720,6 +806,6 @@ describe("the tier rules", () => {
       synth([item("flooring.engineered-timber", { status: "gap", citations: [] })]),
       empty2,
     );
-    expect(r.synthesis.items[0]!.status).toBe("not_expected");
+    expect(r.items[0]!.status).toBe("not_expected");
   });
 });

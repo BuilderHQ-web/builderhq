@@ -71,6 +71,24 @@ interface RunExport {
 }
 const runExport: RunExport = JSON.parse(readFileSync(RUN, "utf8"));
 
+// A run whose citations are all unreadable is almost never a run with
+// no citations; it is an export whose citation key does not match what
+// this reads. That failure scores citation validity at zero and looks
+// exactly like a regression, so it stops the score instead of
+// producing one nobody can trust.
+const citedItems = runExport.items.filter((i) => (i.citations ?? []).length > 0);
+const readable = citedItems.filter((i) =>
+  (i.citations ?? []).some((c) => typeof c.file === "string" && c.file.length > 0),
+);
+if (citedItems.length > 0 && readable.length === 0) {
+  console.error(
+    `\n✗ ${citedItems.length} items carry citations and NONE has a readable "file".` +
+      `\n  Found keys: ${[...new Set(citedItems.flatMap((i) => Object.keys(i.citations[0] ?? {})))].join(", ")}` +
+      `\n  Refusing to score: citation validity would read 0.000 for a reason that is not the engine's.\n`,
+  );
+  process.exit(1);
+}
+
 const out: PipelineOutputForScoring = {
   items: runExport.items.map(
     (i): ScoredItem => ({

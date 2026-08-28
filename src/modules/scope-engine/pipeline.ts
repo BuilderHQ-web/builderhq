@@ -37,11 +37,7 @@ import { z } from "zod";
 
 import { anthropic } from "@/modules/extraction/client";
 import { logger } from "@/lib/logger";
-import {
-  applyDeterministicGuards,
-  collectFacts,
-  renderFacts,
-} from "./deterministic";
+import { collectFacts, renderFacts } from "./deterministic";
 import {
   SCOPE_DIVISIONS,
   SCOPE_STANDARD_VERSION,
@@ -1737,36 +1733,8 @@ export async function synthesiseRun(args: {
   }
   logHeadroom("synthesis", message.usage.output_tokens, SYNTHESIS_MAX_TOKENS);
 
-  // The guards run LAST, after every other enforcement rule, so nothing
-  // downstream can undo them. They re-read the facts with the dwelling
-  // count the synthesis just produced, which is a better number than
-  // the one counted off the findings before the model had spoken.
-  const finalFacts =
-    overview?.dwellings && overview.dwellings !== facts.dwellings
-      ? collectFacts(args.documents, { dwellings: overview.dwellings })
-      : facts;
-  const guarded = applyDeterministicGuards(
-    { overview, items, conflicts, captures },
-    finalFacts,
-  );
-  if (guarded.corrections.length > 0 || guarded.addedConflicts > 0) {
-    logger.info(
-      {
-        event: "scope.synthesis.deterministic_guards",
-        corrections: guarded.corrections.length,
-        addedConflicts: guarded.addedConflicts,
-        // The rules that fired, and how often. This is the line that
-        // says WHICH rule moved a golden score.
-        byRule: guarded.corrections.reduce<Record<string, number>>((acc, c) => {
-          acc[c.rule] = (acc[c.rule] ?? 0) + 1;
-          return acc;
-        }, {}),
-      },
-      "deterministic guards overruled the synthesis",
-    );
-  }
   return {
-    synthesis: guarded.synthesis,
+    synthesis: { overview, items, conflicts, captures },
     usage: usageOf(message),
     salvaged: salvagedCount,
   };

@@ -42,6 +42,11 @@ import {
   type StageUsage,
 } from "@/modules/scope-engine/pipeline";
 import {
+  applyDeterministicGuards,
+  collectFacts,
+  logGuardPass,
+} from "@/modules/scope-engine/deterministic";
+import {
   enforceCitationConsistency,
   enforceConflictIntegrity,
   enforceSourceAuthority,
@@ -317,7 +322,20 @@ const { verdicts, usage: ru } = await classifyResidualItems({
 });
 add("residual", ru);
 
-const finalItems = [...grounding.items, ...foldResiduals(residual, verdicts)];
+// The deterministic guards run over the FINISHED selection, residuals
+// included. Run inside the synthesis they fired twice on this package;
+// most of a run's gaps are minted here, when the residual pool folds
+// in, and applicability is a property of the finished answer.
+const guarded = applyDeterministicGuards(
+  {
+    items: [...grounding.items, ...foldResiduals(residual, verdicts)],
+    conflicts: conflictsEnforced.conflicts,
+  },
+  collectFacts(forSynthesis, { dwellings: synthesis.overview?.dwellings ?? undefined }),
+);
+logGuardPass((obj, msg) => console.error(msg, JSON.stringify(obj)), guarded);
+const finalItems = guarded.items;
+const finalConflicts = guarded.conflicts;
 const coverage = coverageReport(type, finalItems);
 
 // ── the advisory engine, exactly as the product runs it ─────────────
@@ -362,7 +380,7 @@ for (const item of finalItems) {
 const readiness = packReadiness({
   items: finalItems.map((i) => ({ status: i.status, depth: i.depth })),
   conflicts: [
-    ...conflictsEnforced.conflicts.map((c) => ({ severity: c.severity })),
+    ...finalConflicts.map((c) => ({ severity: c.severity })),
     ...baseline.map((b) => ({ severity: b.severity })),
   ],
   namedMissingCount: namedMissing.length,
@@ -376,7 +394,7 @@ const result = {
   docs,
   registerDuplicates: deduped.duplicates.map((d) => d.documentId),
   overview: synthesis.overview,
-  conflicts: conflictsEnforced.conflicts,
+  conflicts: finalConflicts,
   baseline,
   captures: hygiene.kept,
   capturesMappedAway: hygiene.mappedAway,
@@ -410,8 +428,11 @@ const result = {
     remaining: i.remaining,
     gapClass: i.gapClass,
     priceable: i.priceable,
+    // `file`, not `doc`. The scorer reads `file`, and a mismatched key
+    // does not error — it scores citation validity at zero and reads as
+    // a regression the change never caused.
     citations: i.citations.map((c) => ({
-      doc: forSynthesis.find((d) => d.documentId === c.documentId)?.filename ?? c.documentId,
+      file: forSynthesis.find((d) => d.documentId === c.documentId)?.filename ?? c.documentId,
       page: c.page,
     })),
   })),

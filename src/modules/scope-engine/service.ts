@@ -96,6 +96,11 @@ import {
   type SynthesisDocumentInput,
   type SynthesisOverview,
 } from "./pipeline";
+import {
+  applyDeterministicGuards,
+  collectFacts,
+  logGuardPass,
+} from "./deterministic";
 
 type ScopeProjectType =
   | "single_dwelling"
@@ -983,10 +988,26 @@ export async function processRunTick(
       usage = addUsage(usage, "residual", residualUsage);
     }
 
-    const finalItems = [
-      ...selectedItems,
-      ...foldResiduals(residual, residualVerdicts, vocab.plainById),
-    ];
+    // The deterministic guards run over the FINISHED selection, the
+    // residual fold included. Run inside the synthesis they saw only a
+    // fraction of the answer: most of a run's gaps are minted right
+    // here, and applicability is a property of the finished selection
+    // rather than of any one stage.
+    const guarded = applyDeterministicGuards(
+      {
+        items: [
+          ...selectedItems,
+          ...foldResiduals(residual, residualVerdicts, vocab.plainById),
+        ],
+        conflicts: conflictsEnforced.conflicts,
+      },
+      collectFacts(extracted, {
+        dwellings: synthesis.overview?.dwellings ?? undefined,
+      }),
+    );
+    logGuardPass((obj, msg) => logger.info({ ...obj, runId }, msg), guarded);
+    const finalItems = guarded.items;
+    const guardedConflicts = guarded.conflicts;
 
     // The deterministic baseline check: dates and title-block names
     // cross-examined in code. Findings land beside the model's
@@ -1136,7 +1157,7 @@ export async function processRunTick(
       );
     }
     const conflictRows = [
-      ...conflictsEnforced.conflicts.map((c) => ({
+      ...guardedConflicts.map((c) => ({
         runId,
         summary: c.summary,
         citations: c.citations.map((x) => ({
@@ -1195,7 +1216,7 @@ export async function processRunTick(
         runId,
         items: finalItems.length,
         analysis,
-        conflicts: conflictsEnforced.conflicts.length,
+        conflicts: guardedConflicts.length,
         estimatedCostUsd: cost,
       },
       "scope run synthesised and ready for ops review",

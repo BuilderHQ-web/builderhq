@@ -243,15 +243,39 @@ export function renderFacts(facts: DeterministicFacts): string {
   }
 
   if (facts.unselected.length > 0) {
-    parts.push(
-      "MENTIONED BUT NOT SELECTED. The only support for each of these is conditional or generic " +
-        "language. That a thing MIGHT be required is not evidence that it is, and boilerplate is " +
-        'not a decision. None of these may be "evidenced", and none may be raised as a gap — ' +
-        "asking an owner for something nobody chose is how a report loses its authority:\n" +
-        facts.unselected
-          .map((u) => `  ${u.itemId} — ${u.reason}: "${u.quote}"`)
-          .join("\n"),
-    );
+    // Split by tier, because weak evidence means opposite things on
+    // either side of it and one instruction for both taught the model
+    // to answer "not applicable" for work every house has.
+    const weakOwed = facts.unselected.filter((u) => {
+      const t = tierOf(u.itemId);
+      return t === "core" || t === "commercial";
+    });
+    const weakOptional = facts.unselected.filter((u) => !weakOwed.includes(u));
+
+    if (weakOptional.length > 0) {
+      parts.push(
+        "MENTIONED BUT NOT SELECTED. The only support for each of these is conditional or " +
+          "generic language, and none of them is work every project has. That a thing MIGHT be " +
+          "required is not evidence that it is, and boilerplate is not a decision. None may be " +
+          '"evidenced" and none may be raised as a gap — asking an owner for something nobody ' +
+          "chose is how a report loses its authority:\n" +
+          weakOptional
+            .map((u) => `  ${u.itemId} — ${u.reason}: "${u.quote}"`)
+            .join("\n"),
+      );
+    }
+    if (weakOwed.length > 0) {
+      parts.push(
+        "WEAKLY EVIDENCED, BUT STILL OWED. The support for each of these is also only " +
+          'conditional or generic, but every one of them is work this project HAS. So "not ' +
+          'applicable" is wrong: they are owed and undocumented, which makes each one a GAP. ' +
+          "Every house has termite management; a passing note about the standard does not " +
+          "select a system, and it does not remove the requirement either:\n" +
+          weakOwed
+            .map((u) => `  ${u.itemId} — ${u.reason}: "${u.quote}"`)
+            .join("\n"),
+      );
+    }
   }
 
   const settled = facts.reconciliations.filter(
@@ -310,8 +334,12 @@ export interface Correction {
   rule: string;
 }
 
+export type GuardedItem = SynthesisResult["items"][number];
+export type GuardedConflict = SynthesisResult["conflicts"][number];
+
 export interface GuardResult {
-  synthesis: SynthesisResult;
+  items: GuardedItem[];
+  conflicts: GuardedConflict[];
   corrections: Correction[];
   /** Conflicts code added because the model did not raise them. */
   addedConflicts: number;
@@ -319,6 +347,13 @@ export interface GuardResult {
 
 /**
  * Overrule the model where a fact settles the question.
+ *
+ * TAKES THE FINAL SELECTION, not one stage's output. This ran inside
+ * the synthesis once and fired twice on a package where it should have
+ * fired dozens of times: most of a run's gaps are minted later, when
+ * the residual pool is classified and folded in, and the guards never
+ * saw them. Applicability is a property of the finished answer, so it
+ * is judged on the finished answer.
  *
  * Every change is recorded. A guard that silently rewrote an answer
  * would make the corpus unreadable: the score would move and nobody
@@ -331,9 +366,10 @@ export interface GuardResult {
  * cleans up after every other guard rather than being undone by one.
  */
 export function applyDeterministicGuards(
-  synthesis: SynthesisResult,
+  selection: { items: GuardedItem[]; conflicts: GuardedConflict[] },
   facts: DeterministicFacts,
 ): GuardResult {
+  const synthesis = selection;
   const corrections: Correction[] = [];
   const byId = new Map(synthesis.items.map((i) => [i.itemId, i]));
 
@@ -359,17 +395,53 @@ export function applyDeterministicGuards(
     // question more strongly than an absence of selection does. The
     // precedence lives there, and facts.test.ts is what holds it.
     const item = byId.get(u.itemId);
-    if (!item || item.status === "not_expected") continue;
+    if (!item) continue;
+    // TIER DECIDES WHAT WEAK EVIDENCE MEANS, and getting this wrong
+    // cost two core items on the first scored run. Every house has
+    // termite management. A passing note about AS3660 does not select
+    // a system, but it does not remove the requirement either: the
+    // work is owed and undocumented, which is precisely a gap.
+    const tier = tierOf(u.itemId);
+    const to = tier === "core" || tier === "commercial" ? "gap" : "not_expected";
+    if (item.status === to || (to === "not_expected" && item.status === "not_expected")) {
+      continue;
+    }
+    // Never turn an evidenced core line into a gap on this signal
+    // alone: the documents may show it properly elsewhere.
+    if (to === "gap" && item.status === "evidenced") continue;
     corrections.push({
       itemId: u.itemId,
       field: "status",
       from: item.status,
-      to: "not_expected",
+      to,
       rule: "mentioned-not-selected",
     });
-    item.status = "not_expected";
+    item.status = to;
     item.citations = [];
-    item.note = `Mentioned only in ${u.reason}: "${u.quote}". Nothing in the documents selects it.`;
+    item.note =
+      to === "gap"
+        ? `Only ${u.reason} supports this: "${u.quote}". The work is expected and is not documented.`
+        : `Mentioned only in ${u.reason}: "${u.quote}". Nothing in the documents selects it.`;
+  }
+
+  // A commercial item is the builder's cost of doing the work, not a
+  // design decision, so it is never "not applicable". Scaffolding does
+  // not stop being needed because nobody drew it. Across both golden
+  // packages, NOT ONE of the 31 commercial-tier lines is not_expected.
+  for (const item of synthesis.items) {
+    if (item.status !== "not_expected") continue;
+    if (tierOf(item.itemId) !== "commercial") continue;
+    corrections.push({
+      itemId: item.itemId,
+      field: "status",
+      from: "not_expected",
+      to: "gap",
+      rule: "commercial-work-is-always-owed",
+    });
+    item.status = "gap";
+    item.note =
+      item.note ??
+      "The builder carries this as part of doing the work; the documents do not price it.";
   }
 
   // ── the tier rules ────────────────────────────────────────────────
@@ -535,9 +607,29 @@ export function applyDeterministicGuards(
     addedConflicts++;
   }
 
-  return {
-    synthesis: { ...synthesis, items: synthesis.items, conflicts },
-    corrections,
-    addedConflicts,
-  };
+  return { items: synthesis.items, conflicts, corrections, addedConflicts };
+}
+
+/**
+ * One line of logging for a guard pass, so a moved score always has a
+ * nameable cause. Returns nothing and never throws: a run must not fail
+ * because its telemetry did.
+ */
+export function logGuardPass(
+  log: (obj: Record<string, unknown>, msg: string) => void,
+  result: GuardResult,
+): void {
+  if (result.corrections.length === 0 && result.addedConflicts === 0) return;
+  log(
+    {
+      event: "scope.deterministic_guards",
+      corrections: result.corrections.length,
+      addedConflicts: result.addedConflicts,
+      byRule: result.corrections.reduce<Record<string, number>>((acc, c) => {
+        acc[c.rule] = (acc[c.rule] ?? 0) + 1;
+        return acc;
+      }, {}),
+    },
+    "deterministic guards overruled the selection",
+  );
 }
