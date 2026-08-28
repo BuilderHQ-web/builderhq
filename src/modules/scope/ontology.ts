@@ -20,11 +20,11 @@
  *     deliberate event.
  */
 
-import type { ScopeDivision, ScopeItem } from "./types";
+import type { ScopeAlternativeGroup, ScopeDivision, ScopeItem } from "./types";
 
 /** Semantic version of the library. Projects pin the version they
  *  were prepared under. */
-export const SCOPE_STANDARD_VERSION = "1.2.0";
+export const SCOPE_STANDARD_VERSION = "1.3.0";
 
 // ── divisions — the build in reading order ──────────────────────────────
 
@@ -264,6 +264,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Setting up the site to work from: access, storage, and getting the block ready for trades.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["site setup", "establishment"],
   },
   {
@@ -273,6 +274,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Hire fencing around the site for the whole build, required by law to keep the public out.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["temp fence", "security fencing", "hoarding"],
   },
   {
@@ -282,6 +284,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A toilet and basic facilities for the people building your home, hired for the duration.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["site toilet", "portaloo", "site shed", "lunch shed"],
   },
   {
@@ -291,6 +294,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The working platforms and fall protection needed to build anything above one storey safely.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["scaffold", "perimeter scaffold", "handrail protection", "roof rail"],
   },
   {
@@ -300,6 +304,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Skip bins and tip fees for everything a build throws away, kept off your lawn and street.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["skip bins", "rubbish removal", "tip fees", "waste disposal"],
   },
   {
@@ -309,6 +314,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A licensed surveyor marking exactly where the building sits on the block before anything is dug.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["set out", "site survey", "identification survey", "peg out"],
   },
   {
@@ -318,6 +324,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Builder's power and water on site until the permanent connections are live.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["temp power", "builder's pole", "temporary supply"],
   },
   {
@@ -327,6 +334,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Managing footpath and road access for deliveries and concrete pours where council requires it.",
     trade: "preliminaries",
+    tier: "commercial",
     appliesTo: ["multi_dwelling", "renovation", "extension"],
     aliases: ["traffic control", "road occupancy", "footpath permit"],
   },
@@ -337,6 +345,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Crane or pump hire for lifts the site cannot do by hand: trusses, steel, concrete to upper floors.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["crane hire", "concrete pump", "franna"],
   },
   {
@@ -346,6 +355,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Covering and protecting the parts of your home and property that stay, while work happens around them.",
     trade: "preliminaries",
+    tier: "commercial",
     appliesTo: ["renovation", "extension"],
     aliases: ["floor protection", "dust barriers", "protection works"],
   },
@@ -356,6 +366,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A photographic record of neighbouring properties before work starts, protecting everyone if cracks are claimed later.",
     trade: "preliminaries",
+    tier: "commercial",
     appliesTo: ["multi_dwelling", "extension", "renovation"],
     aliases: ["dilap report", "condition report"],
   },
@@ -366,6 +377,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The builder's supervisor running the job: trades, deliveries, inspections and the program.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["site supervision", "project management", "site management"],
   },
   {
@@ -375,6 +387,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The builder's construction insurance and the home warranty cover the law requires them to take out for you.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["hbcf", "domestic building insurance", "home warranty insurance", "contract works insurance"],
   },
   {
@@ -384,6 +397,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Progressive site clean-ups and the professional clean that hands the home over ready to live in.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["final clean", "builders clean", "handover clean"],
   },
 
@@ -395,6 +409,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The legal permission to build, issued by a surveyor or certifier who also inspects the work in stages.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["building approval", "construction certificate", "cc", "private certifier", "building surveyor"],
   },
   {
@@ -404,6 +419,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The engineer's drawings and sign-off for footings, steel and anything structural.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["structural engineer", "engineering certification", "form 15", "form 16", "compliance certificate"],
   },
   {
@@ -413,6 +429,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The report proving the design meets the required energy star rating, which drives glazing and insulation choices.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["nathers", "basix", "section j", "energy rating", "6 star", "7 star"],
   },
   {
@@ -422,6 +439,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Testing what the ground is made of, because the soil classification decides how strong the footings must be.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["soil test", "geotechnical report", "site classification", "bore log"],
   },
   {
@@ -431,6 +449,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The required inspections at key stages, from footings to frame to final, before work may continue.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["stage inspections", "frame inspection", "final inspection", "waterproofing inspection"],
   },
   {
@@ -440,6 +459,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The certificate at the end that says the home is legal to live in.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["oc", "occupation certificate", "certificate of occupancy", "form 21"],
   },
   {
@@ -449,6 +469,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The extra construction requirements when a site carries a bushfire attack level rating, from sealed eaves to special glazing.",
     trade: "preliminaries",
+    tier: "conditional",
     aliases: ["bal", "bal-12.5", "bal-19", "bal-29", "bal-40", "bal-fz", "bushfire attack level"],
   },
   {
@@ -458,6 +479,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Sound testing and design where units share walls and floors, or where a busy road requires it.",
     trade: "preliminaries",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["acoustic report", "sound insulation", "acoustic certification"],
   },
@@ -468,6 +490,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Permissions the build needs beyond the main permits: building over an easement, the legal point of discharge, crossover and road permits, asset protection.",
     trade: "preliminaries",
+    tier: "conditional",
     aliases: [
       "build over easement",
       "building over easement",
@@ -488,6 +511,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The statutory process and physical measures that protect the neighbours' land and buildings when work happens near a boundary, including notices, agreements and condition surveys.",
     trade: "preliminaries",
+    tier: "conditional",
     aliases: [
       "protection work notice",
       "form 7",
@@ -507,6 +531,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Taking the existing building down entirely and clearing the block, including the demolition permit.",
     trade: "demolition",
+    tier: "conditional",
     aliases: ["demolish existing dwelling", "knock down", "kdr", "remove existing dwelling"],
   },
   {
@@ -516,6 +541,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Gutting the rooms being renovated: linings, kitchens, bathrooms and finishes out, structure kept.",
     trade: "demolition",
+    tier: "core",
     appliesTo: ["renovation", "extension"],
     aliases: ["strip out", "soft strip", "gut", "remove existing finishes"],
   },
@@ -526,6 +552,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A hazardous-materials survey of anything being demolished, then licensed removal and disposal of asbestos or other hazards, priced as an allowance until the extent is proven.",
     trade: "demolition",
+    tier: "conditional",
     allowance: "ps",
     aliases: [
       "asbestos",
@@ -545,6 +572,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Removing trees and vegetation in the way of the build, including stumps and any council permits.",
     trade: "demolition",
+    tier: "conditional",
     aliases: ["tree lopping", "stump grinding", "vegetation clearing", "arborist"],
   },
   {
@@ -554,6 +582,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Safely cutting off power, gas, water and sewer to the old structure before demolition.",
     trade: "demolition",
+    tier: "conditional",
     aliases: ["disconnection", "abolishment", "meter removal"],
   },
   {
@@ -563,6 +592,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Carefully saving nominated items, such as period doors or bricks, for reuse in the new work.",
     trade: "demolition",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     aliases: ["salvage", "retain for reuse", "carefully remove"],
   },
@@ -573,6 +603,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Patching and squaring up the existing building where demolition leaves scars the new work does not cover.",
     trade: "demolition",
+    tier: "core",
     appliesTo: ["renovation", "extension"],
     aliases: ["make good", "patch and repair"],
   },
@@ -585,6 +616,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Cutting new doorways or windows into existing walls, with the lintels and support that keeps everything above them up.",
     trade: "carpentry",
+    tier: "core",
     appliesTo: ["renovation", "extension"],
     aliases: ["new opening", "enlarge opening", "cut new doorway"],
   },
@@ -595,6 +627,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Taking out structural walls and replacing their job with engineered beams, opening rooms into each other.",
     trade: "carpentry",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     aliases: ["remove load bearing wall", "install beam over", "open plan conversion"],
   },
@@ -605,6 +638,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Holding the building up temporarily while its permanent support is changed underneath.",
     trade: "carpentry",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     aliases: ["acrow props", "needle and prop", "temporary support"],
   },
@@ -615,6 +649,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Strengthening the existing footings where they are failing or where new work loads them, priced as an allowance until exposed.",
     trade: "concrete_work",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     allowance: "ps",
     aliases: ["underpin", "mass concrete underpinning", "grout injection"],
@@ -626,6 +661,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Joining the new roof into the old one so the junction is structurally sound and watertight.",
     trade: "carpentry",
+    tier: "core",
     appliesTo: ["extension"],
     aliases: ["roof junction", "tie in to existing roof", "match existing roofline"],
   },
@@ -636,6 +672,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Making new floors meet old ones at the same level, so the finished home has no surprise steps.",
     trade: "carpentry",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     aliases: ["match existing floor level", "floor infill", "pack and level"],
   },
@@ -648,6 +685,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Scraping the topsoil and vegetation off the building area down to solid ground.",
     trade: "ground_works",
+    tier: "core",
     aliases: ["strip topsoil", "clear and grub", "site scrape"],
   },
   {
@@ -657,6 +695,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The big earthmoving that levels a sloping block into the platforms the home sits on.",
     trade: "ground_works",
+    tier: "conditional",
     aliases: ["cut and fill", "bulk earthworks", "benching", "building platform"],
   },
   {
@@ -666,6 +705,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The precise trenches and pier holes dug for footings, slabs edges and underground pipes.",
     trade: "ground_works",
+    tier: "core",
     aliases: ["trenching", "footing excavation", "pier holes"],
   },
   {
@@ -675,6 +715,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Breaking through rock if the dig finds it, priced as an allowance because nobody knows how much is down there until digging starts.",
     trade: "ground_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["rock breaking", "hydraulic hammer", "rock allowance", "floater removal"],
   },
@@ -685,6 +726,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Trucking away the soil the dig produces, priced by the load and the tip that accepts it.",
     trade: "ground_works",
+    tier: "core",
     aliases: ["cart away", "spoil off site", "soil removal", "export material"],
   },
   {
@@ -694,6 +736,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Bringing in clean fill and compacting it in layers where the design needs the ground built up.",
     trade: "ground_works",
+    tier: "conditional",
     aliases: ["controlled fill", "compacted fill", "select fill", "roadbase"],
   },
   {
@@ -703,6 +746,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Pumping water out of excavations where the water table interferes, priced as an allowance if conditions are unknown.",
     trade: "ground_works",
+    tier: "conditional",
     appliesTo: ["multi_dwelling", "single_dwelling"],
     allowance: "ps",
     aliases: ["dewatering", "spear pumps", "groundwater"],
@@ -714,6 +758,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The silt fences and drains that keep soil on the site and out of the street and stormwater, required by council.",
     trade: "ground_works",
+    tier: "core",
     aliases: ["silt fence", "sediment control", "stabilised access"],
   },
 
@@ -725,6 +770,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The underground sewer pipes from the home to the authority connection point.",
     trade: "hydraulic_services",
+    tier: "alternative",
     aliases: ["sewer tie", "sanitary drainage", "sewer junction", "boundary trap"],
   },
   {
@@ -734,6 +780,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The pipes and pits that take roof and surface water to the street or the legal discharge point.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["stormwater drainage", "kerb adaptor", "rubble pit", "silt pit"],
   },
   {
@@ -743,6 +790,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A tank or basin that slows stormwater before it leaves the block, required by many councils.",
     trade: "hydraulic_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling", "single_dwelling", "extension"],
     aliases: ["osd", "detention tank", "retention system"],
   },
@@ -753,6 +801,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The cold water line from the meter into the home, and the meter itself where a new one is needed.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["water service", "water meter", "mains connection"],
   },
   {
@@ -762,6 +811,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Bringing power from the street to your switchboard, overhead or underground, including the authority's fees.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["consumer mains", "underground power", "pit and pipe", "point of attachment"],
   },
   {
@@ -771,6 +821,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The conduit and lead-in that gets internet and phone service into the home.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["nbn conduit", "lead-in conduit", "telecommunications pit", "comms"],
   },
   {
@@ -780,6 +831,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The gas line from the main or bottles to the meter, where the home uses gas.",
     trade: "hydraulic_services",
+    tier: "conditional",
     aliases: ["gas meter", "gas service", "lpg bottles"],
   },
   {
@@ -789,6 +841,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A septic or treatment system where there is no sewer to connect to, sized and approved for the block.",
     trade: "hydraulic_services",
+    tier: "alternative",
     appliesTo: ["single_dwelling", "extension", "renovation"],
     allowance: "ps",
     aliases: ["septic", "aws", "aerated wastewater", "envirocycle", "absorption trenches"],
@@ -800,6 +853,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The tank that captures roof water and the pump that feeds it to toilets, laundry or garden.",
     trade: "hydraulic_services",
+    tier: "conditional",
     aliases: ["water tank", "rainwater harvesting", "tank and pump"],
   },
 
@@ -811,6 +865,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Concrete footings poured in trenches to carry walls and posts, sized by the engineer for your soil.",
     trade: "concrete_work",
+    tier: "alternative",
     aliases: ["strip footing", "pad footing", "footing beams"],
   },
   {
@@ -820,7 +875,11 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A concrete slab poured over foam pods that sits on top of the ground, the most common modern house slab.",
     trade: "concrete_work",
+    tier: "alternative",
     aliases: ["waffle pod", "pod slab", "waffle raft"],
+    /** As raft-slab: a slab on ground has no underfloor void and no timber
+     *  subfloor. */
+    excludes: ["insulation.underfloor", "footings-slab.subfloor-timber"],
   },
   {
     id: "footings-slab.raft-slab",
@@ -829,7 +888,11 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A concrete slab with thickened edge beams dug into the ground, used where soils or levels demand it.",
     trade: "concrete_work",
+    tier: "alternative",
     aliases: ["raft slab", "stiffened raft", "footing slab", "slab on ground"],
+    /** A slab on ground has no underfloor void to insulate and no timber
+     *  subfloor beneath it. */
+    excludes: ["insulation.underfloor", "footings-slab.subfloor-timber"],
   },
   {
     id: "footings-slab.suspended-slab",
@@ -838,6 +901,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A concrete floor spanning between supports, for upper storeys, garages over rooms, or steep sites.",
     trade: "concrete_work",
+    tier: "conditional",
     aliases: ["suspended slab", "bondek", "formwork slab", "ultrafloor"],
   },
   {
@@ -847,6 +911,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Deep supports drilled or screwed down to solid ground where the surface soil cannot carry the home, often an allowance until depths are proven.",
     trade: "concrete_work",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["screw piles", "bored piers", "concrete piers", "pier and beam", "founding depth"],
   },
@@ -857,6 +922,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The barrier or treatment that protects the home from termites, required and certified under the code.",
     trade: "concrete_work",
+    tier: "core",
     aliases: ["termite barrier", "termimesh", "kordon", "part a treatment", "physical barrier"],
   },
   {
@@ -866,6 +932,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The plastic membrane and sand bed under the slab that stops ground moisture rising into the home.",
     trade: "concrete_work",
+    tier: "core",
     aliases: ["damp proof membrane", "polythene", "fortecon", "sand bed"],
   },
   {
@@ -875,6 +942,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Stumps, bearers and joists carrying a timber ground floor, the traditional alternative to a slab.",
     trade: "carpentry",
+    tier: "alternative",
     aliases: ["stumps", "bearers and joists", "subfloor frame", "restumping"],
   },
   {
@@ -884,6 +952,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The lowered slab zones under showers, garages and porches that make falls and finishes work.",
     trade: "concrete_work",
+    tier: "core",
     aliases: ["setdown", "rebate", "shower recess", "garage step down"],
   },
   {
@@ -893,6 +962,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The drainage pipes laid in the ground before the slab covers them, put exactly where bathrooms and kitchens will land.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["under slab drainage", "in-slab plumbing", "prelay"],
   },
 
@@ -904,6 +974,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Structural walls holding back earth, engineered and drained, usually where cuts exceed about a metre.",
     trade: "concrete_work",
+    tier: "conditional",
     aliases: ["besser block retaining", "core filled", "cantilever retaining", "crib wall"],
   },
   {
@@ -913,6 +984,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Treated timber or concrete sleeper walls for smaller level changes around the block.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["sleeper wall", "treated pine retaining", "concrete sleepers"],
   },
   {
@@ -922,6 +994,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The gravel and slotted pipe behind every retaining wall that lets water escape instead of pushing the wall over.",
     trade: "hydraulic_services",
+    tier: "conditional",
     aliases: ["agi drain", "ag pipe", "subsoil drain", "geofabric"],
   },
   {
@@ -931,6 +1004,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Temporarily supporting deep excavation faces so work beside them is safe, priced as an allowance where ground is unproven.",
     trade: "ground_works",
+    tier: "conditional",
     appliesTo: ["multi_dwelling", "single_dwelling"],
     allowance: "ps",
     aliases: [
@@ -955,6 +1029,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The steel members that carry big spans and open corners, supplied, delivered and installed to the engineer's design.",
     trade: "structural_steelwork",
+    tier: "conditional",
     aliases: ["ub", "uc", "pfc", "shs", "rhs", "universal beam", "steel post"],
   },
   {
@@ -964,6 +1039,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Steel frames for wide garage openings and large clear spans.",
     trade: "structural_steelwork",
+    tier: "conditional",
     aliases: ["portal frame", "garage portal"],
   },
   {
@@ -973,6 +1049,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The steel over windows and doors in brickwork that carries the bricks above the opening.",
     trade: "structural_steelwork",
+    tier: "conditional",
     aliases: ["lintel", "galintel", "angle lintel", "t-bar"],
   },
   {
@@ -982,6 +1059,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The engineered plates, brackets and bolts that tie steel to concrete and timber.",
     trade: "structural_steelwork",
+    tier: "conditional",
     aliases: ["cleat", "base plate", "chemset", "hold down bolts"],
   },
   {
@@ -991,6 +1069,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The rust protection on structural steel, from primer inside to hot-dip galvanising near the coast.",
     trade: "structural_steelwork",
+    tier: "conditional",
     aliases: ["hot dip galvanised", "hdg", "zinc primer", "duplex coating"],
   },
 
@@ -1002,6 +1081,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The timber or steel wall frames of every room, prefabricated or built on site.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["wall frames", "stud walls", "prefab frames", "90x45", "mgp10"],
   },
   {
@@ -1011,6 +1091,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Engineered roof trusses made to the roof design and lifted into place.",
     trade: "carpentry",
+    tier: "alternative",
     aliases: ["trusses", "truss layout", "girder truss"],
   },
   {
@@ -1020,6 +1101,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A roof cut and built rafter by rafter on site, used for complex rooflines and cathedral ceilings.",
     trade: "carpentry",
+    tier: "alternative",
     aliases: ["pitched on site", "rafters", "cut roof", "ridge beam"],
   },
   {
@@ -1029,6 +1111,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The engineered joists and sheet flooring that make the upper storey's floor.",
     trade: "carpentry",
+    tier: "conditional",
     aliases: ["posi-strut", "i-joist", "ljl", "yellow tongue", "particleboard flooring", "sturdifloor"],
   },
   {
@@ -1038,6 +1121,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Laminated timber beams that carry loads over openings and long spans where steel is not needed.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["lvl", "glulam", "hyspan", "smartframe", "laminated beam"],
   },
   {
@@ -1047,6 +1131,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Steel wall and roof framing as an alternative to timber, straight and termite-proof.",
     trade: "carpentry",
+    tier: "conditional",
     aliases: ["steel frame", "truecore", "light gauge steel"],
   },
   {
@@ -1056,6 +1141,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The extra structure that lets a ceiling follow the roofline instead of sitting flat.",
     trade: "carpentry",
+    tier: "conditional",
     aliases: ["raked ceiling", "cathedral ceiling", "exposed rafters"],
   },
   {
@@ -1065,6 +1151,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The fire and sound rated walls that separate one dwelling from the next.",
     trade: "carpentry",
+    tier: "core",
     appliesTo: ["multi_dwelling"],
     aliases: ["party wall", "intertenancy wall", "separating wall", "hebel powerpanel"],
   },
@@ -1075,6 +1162,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The bracing, straps and bolts that make frames rigid and hold the roof down in wind, all to the engineer's schedule.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["bracing", "tie down", "cyclone rods", "speedbrace", "shear wall"],
   },
 
@@ -1086,6 +1174,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Colorbond or zincalume steel roofing, screwed to battens over the whole roof.",
     trade: "roofing",
+    tier: "alternative",
     aliases: ["colorbond", "corrugated", "klip-lok", "trimdek", "custom orb", "zincalume"],
   },
   {
@@ -1095,6 +1184,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Concrete or terracotta roof tiles, laid, pointed and ridge-capped.",
     trade: "roofing",
+    tier: "alternative",
     aliases: ["concrete tiles", "terracotta tiles", "ridge capping", "repointing"],
   },
   {
@@ -1104,6 +1194,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The reflective blanket under the roof covering and the battens it fixes to.",
     trade: "roofing",
+    tier: "core",
     aliases: ["sarking", "anticon", "roof blanket", "roof battens", "top hats"],
   },
   {
@@ -1113,6 +1204,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The boards that finish the roof edge and the gutters that catch the rain off it.",
     trade: "roofing",
+    tier: "core",
     aliases: ["fascia", "quad gutter", "half round", "eaves gutter", "gutter guard"],
   },
   {
@@ -1122,6 +1214,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The pipes that take roof water from the gutters down to the stormwater drains.",
     trade: "roofing",
+    tier: "core",
     aliases: ["downpipe", "dp", "rain head", "spreader"],
   },
   {
@@ -1131,6 +1224,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The folded metal at every roof junction, wall and penetration that keeps water out for the life of the roof.",
     trade: "roofing",
+    tier: "core",
     aliases: ["flashing", "apron", "barge capping", "parapet capping", "penetration flashing"],
   },
   {
@@ -1140,7 +1234,12 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Internal gutters where roof sections meet, engineered with overflows because a blocked one floods the house.",
     trade: "roofing",
+    tier: "conditional",
     aliases: ["box gutter", "sump", "overflow", "rainhead"],
+    /** Box gutters sit behind parapet capping, so there is no eave and no
+     *  soffit to line. Ratified 27 Aug 2026 after both the engine and an
+     *  independent auditor called the missing soffit a finish gap. */
+    excludes: ["external-walls.eaves-soffits"],
   },
   {
     id: "roofing.skylights",
@@ -1149,6 +1248,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Natural light through the roof, from fixed skylights to opening roof windows, flashed into the roofing.",
     trade: "roofing",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["skylight", "velux", "solatube", "roof window"],
   },
@@ -1159,6 +1259,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Vents or powered fans that let hot air out of the roof space.",
     trade: "roofing",
+    tier: "conditional",
     aliases: ["whirlybird", "roof vent", "ridge vent", "solar fan"],
   },
 
@@ -1170,6 +1271,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A single skin of bricks outside the frame, the most common Australian external wall.",
     trade: "brickwork_and_blockwork",
+    tier: "alternative",
     aliases: ["face brick", "brick veneer", "common bricks", "brickwork"],
   },
   {
@@ -1179,6 +1281,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Two skins of masonry with a cavity between, standard in some states and prized for solidity.",
     trade: "brickwork_and_blockwork",
+    tier: "alternative",
     aliases: ["double brick", "cavity brick", "full brick"],
   },
   {
@@ -1188,6 +1291,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Concrete block walls, often core-filled with steel and concrete, common for garages, basements and boundary walls.",
     trade: "brickwork_and_blockwork",
+    tier: "alternative",
     aliases: ["besser block", "core filled blockwork", "cmu", "rendered blockwork"],
   },
   {
@@ -1197,6 +1301,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Sheet and plank cladding systems fixed over the frame, from weatherboard looks to crisp panel facades.",
     trade: "external_finishes",
+    tier: "alternative",
     aliases: ["scyon", "axon", "linea", "matrix", "hardie", "fc sheet", "blueboard"],
   },
   {
@@ -1206,6 +1311,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Metal sheet cladding to external walls: Colorbond profiles, standing seam, interlocking panels or weathering steel, with its trims and flashings.",
     trade: "external_finishes",
+    tier: "alternative",
     aliases: [
       "colorbond cladding",
       "colorbond longline",
@@ -1228,6 +1334,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Natural timber or composite boards as the feature skin of the building.",
     trade: "external_finishes",
+    tier: "alternative",
     aliases: ["shiplap", "weatherboard", "silvertop ash", "spotted gum cladding", "composite cladding"],
   },
   {
@@ -1237,6 +1344,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Rendered finishes over brick, block or foam, from cement render to acrylic texture systems.",
     trade: "external_finishes",
+    tier: "conditional",
     aliases: ["acrylic render", "cement render", "texture coat", "unitex", "granosite"],
   },
   {
@@ -1246,6 +1354,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Aerated concrete or insulated foam panel walls, rendered to finish, light and quick to build.",
     trade: "external_finishes",
+    tier: "alternative",
     aliases: ["hebel", "aac panel", "eps panel", "nrg", "exsulite"],
   },
   {
@@ -1255,6 +1364,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The hidden hardware in masonry walls: ties holding skins together, flashings and weepholes letting moisture escape.",
     trade: "brickwork_and_blockwork",
+    tier: "conditional",
     aliases: ["brick ties", "weepholes", "cavity flashing", "dpc", "damp course"],
   },
   {
@@ -1264,6 +1374,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The deliberate joints that let walls move with the ground instead of cracking.",
     trade: "brickwork_and_blockwork",
+    tier: "conditional",
     aliases: ["articulation joint", "expansion joint", "control joint"],
   },
   {
@@ -1273,6 +1384,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The lined underside of the roof overhang around the home.",
     trade: "external_finishes",
+    tier: "core",
     aliases: ["eaves lining", "soffit", "villaboard eaves", "boxed eaves"],
   },
 
@@ -1284,6 +1396,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The standard aluminium-framed windows and sliding glass doors throughout the home, made to the window schedule.",
     trade: "windows_and_curtain_wall",
+    tier: "alternative",
     aliases: ["window schedule", "awning windows", "sliding windows", "stacker door", "sliding door"],
   },
   {
@@ -1293,6 +1406,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Timber or timber-look window frames where the design calls for warmth or heritage character.",
     trade: "windows_and_curtain_wall",
+    tier: "alternative",
     allowance: "pc",
     aliases: ["timber windows", "cedar windows", "double hung", "upvc windows"],
   },
@@ -1303,6 +1417,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Bi-fold doors, corner-opening units and other large-format glazing that opens the home right up.",
     trade: "windows_and_curtain_wall",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["bifold", "corner stacker", "servery window", "louvre windows"],
   },
@@ -1313,6 +1428,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The glass itself: single, double glazed or low-e, chosen to hit the energy rating and comfort the design promises.",
     trade: "glazing",
+    tier: "core",
     aliases: ["double glazing", "igu", "low-e", "u-value", "shgc", "comfortplus"],
   },
   {
@@ -1322,6 +1438,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Toughened glass where the code demands it and frosted glass where privacy needs it.",
     trade: "glazing",
+    tier: "core",
     aliases: ["toughened", "grade a safety glass", "obscure", "translucent"],
   },
   {
@@ -1331,6 +1448,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Insect screens to opening windows and sliding doors.",
     trade: "windows_and_curtain_wall",
+    tier: "core",
     aliases: ["insect screens", "midge mesh"],
   },
   {
@@ -1340,6 +1458,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The timber linings and sills that finish each window into the wall.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["reveals", "window sill", "sill board"],
   },
 
@@ -1351,6 +1470,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The front door: the statement piece of the facade, hung in its frame with seals and a proper lock.",
     trade: "doors",
+    tier: "core",
     allowance: "pc",
     aliases: ["entrance door", "pivot door", "front door", "entry frame"],
   },
@@ -1361,6 +1481,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Handles, deadlocks and smart locks on the doors in and out of the home.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["entrance set", "deadlock", "smart lock", "lever set"],
   },
@@ -1371,6 +1492,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Glazed hinged doors to outdoor areas, secondary entries and laundries.",
     trade: "doors",
+    tier: "conditional",
     aliases: ["french doors", "laundry door", "glazed external door"],
   },
   {
@@ -1380,6 +1502,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The sectional or panel-lift garage door, colour matched to the facade.",
     trade: "doors",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["sectional door", "panel lift", "roller door", "b&d"],
   },
@@ -1390,6 +1513,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The motor and remotes that drive the garage door.",
     trade: "doors",
+    tier: "conditional",
     aliases: ["garage motor", "auto opener", "merlin", "remote"],
   },
   {
@@ -1399,6 +1523,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Security screen doors to entries and sliding doors, letting air in and keeping everything else out.",
     trade: "doors",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["security door", "crimsafe", "screen door", "barrier door"],
   },
@@ -1411,6 +1536,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The batts above the ceiling that do the heaviest lifting for comfort and energy bills.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["ceiling batts", "r4.0", "r5.0", "r6.0", "glasswool", "earthwool"],
   },
   {
@@ -1420,6 +1546,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Batts in every external wall, at the rating the energy report requires.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["wall batts", "r2.5", "r2.7", "wall insulation"],
   },
   {
@@ -1429,6 +1556,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Sound batts in the walls around bedrooms, bathrooms and between floors, for a quieter home.",
     trade: "carpentry",
+    tier: "conditional",
     aliases: ["acoustic batts", "sound screen", "soundcheck", "internal wall insulation"],
   },
   {
@@ -1438,6 +1566,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Insulation under suspended timber floors, closing off the cold from below.",
     trade: "carpentry",
+    tier: "conditional",
     aliases: ["underfloor batts", "expol", "subfloor insulation"],
   },
   {
@@ -1447,6 +1576,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The breather membrane around the frame behind the cladding, managing wind and moisture.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["wall wrap", "sisalation", "vapour permeable membrane", "proctorwrap"],
   },
   {
@@ -1456,6 +1586,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The rated insulation systems inside walls shared between dwellings.",
     trade: "carpentry",
+    tier: "core",
     appliesTo: ["multi_dwelling"],
     aliases: ["party wall batts", "rw rating", "discontinuous construction"],
   },
@@ -1468,6 +1599,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The plasterboard on every internal wall face, stopped and sanded ready for paint.",
     trade: "partitions_and_ceilings",
+    tier: "core",
     aliases: ["gyprock", "plasterboard", "10mm board", "level 4 finish"],
   },
   {
@@ -1477,6 +1609,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The plasterboard ceilings through the home, fixed to battens or directly to the structure.",
     trade: "partitions_and_ceilings",
+    tier: "core",
     aliases: ["ceiling board", "13mm ceiling", "supaceil", "furring channel"],
   },
   {
@@ -1486,6 +1619,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The moisture-resistant board behind tiles in bathrooms and laundries.",
     trade: "partitions_and_ceilings",
+    tier: "core",
     aliases: ["aquachek", "wet area board", "villaboard", "cement sheet lining"],
   },
   {
@@ -1495,6 +1629,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The moulding where walls meet ceilings, from simple cove to period profiles.",
     trade: "partitions_and_ceilings",
+    tier: "alternative",
     aliases: ["cove cornice", "75mm cornice", "decorative cornice"],
   },
   {
@@ -1504,6 +1639,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The crisp cornice-free junction between wall and ceiling, a modern detail that takes extra plastering care.",
     trade: "partitions_and_ceilings",
+    tier: "alternative",
     aliases: ["square set", "shadowline ceiling", "no cornice"],
   },
   {
@@ -1513,6 +1649,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Dropped ceiling sections over kitchens and robes, and any recessed or feature ceiling details.",
     trade: "partitions_and_ceilings",
+    tier: "conditional",
     aliases: ["bulkhead", "dropped ceiling", "recessed ceiling", "shadowline bulkhead"],
   },
   {
@@ -1522,6 +1659,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The hatch into the roof space and access panels where services need reaching.",
     trade: "partitions_and_ceilings",
+    tier: "core",
     aliases: ["manhole", "access hatch", "roof access"],
   },
 
@@ -1533,6 +1671,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The standard smooth doors to bedrooms, bathrooms and living spaces, hung and fitted.",
     trade: "doors",
+    tier: "core",
     aliases: ["flush panel", "hollow core", "solid core", "redicote"],
   },
   {
@@ -1542,6 +1681,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Profiled, glazed or oversized doors where the design makes a moment of a doorway.",
     trade: "doors",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["barn door", "pivot internal", "glazed internal door", "panelled door"],
   },
@@ -1552,6 +1692,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Doors that slide away inside the wall, saving space at robes, pantries and ensuites.",
     trade: "doors",
+    tier: "conditional",
     aliases: ["cavity slider", "cs unit", "pocket door"],
   },
   {
@@ -1561,6 +1702,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The handles, hinges, latches and privacy sets on every internal door.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["passage set", "privacy set", "lever handles", "flush pulls", "hinges"],
   },
@@ -1571,6 +1713,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The frames each internal door hangs in, set square so doors close cleanly for years.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["door jamb", "single rebate", "split jamb", "door stop"],
   },
   {
@@ -1580,6 +1723,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The sliding panels across built-in robes, mirrored or panelled.",
     trade: "doors",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["robe doors", "mirror sliders", "vinyl sliding doors"],
   },
@@ -1592,6 +1736,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The boards along the bottom of every wall, finishing the junction with the floor.",
     trade: "internal_finishes",
+    tier: "core",
     aliases: ["skirting", "67mm skirt", "lambs tongue", "colonial skirting", "pencil round"],
   },
   {
@@ -1601,6 +1746,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The trim around every door and window opening inside the home.",
     trade: "internal_finishes",
+    tier: "core",
     aliases: ["architrave", "arch and skirt", "42mm architrave"],
   },
   {
@@ -1610,6 +1756,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The basic shelves and rails in robes, linen cupboards and the pantry, before any upgraded fit-outs.",
     trade: "carpentry",
+    tier: "core",
     aliases: ["melamine shelving", "shelf and rail", "linen shelving", "pantry shelving"],
   },
   {
@@ -1619,6 +1766,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Wainscoting, VJ panelling, picture rails and the decorative timberwork that gives rooms character.",
     trade: "internal_finishes",
+    tier: "conditional",
     aliases: ["vj panelling", "wainscoting", "wall panelling", "dado rail", "batten feature wall"],
   },
   {
@@ -1628,6 +1776,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Built-in timber seats and bench tops made by the carpenter rather than the cabinet maker.",
     trade: "carpentry",
+    tier: "conditional",
     aliases: ["window seat", "bench seat", "day bed"],
   },
 
@@ -1639,6 +1788,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The staircase itself: treads, risers and stringers, in the timber or construction the design specifies.",
     trade: "carpentry",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["staircase", "stair stringers", "treads and risers", "mdf stairs", "victorian ash stairs"],
   },
@@ -1649,6 +1799,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The balustrade up the stairs and around voids, in timber, steel or glass, built to the height the code requires.",
     trade: "metalwork",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["balustrade", "handrail", "glass balustrade", "stainless wire", "void balustrade"],
   },
@@ -1659,6 +1810,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Balustrades to balconies, decks and external stairs, weatherproof and to code heights.",
     trade: "metalwork",
+    tier: "conditional",
     aliases: ["balcony balustrade", "deck balustrade", "external handrail"],
   },
   {
@@ -1668,6 +1820,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Outdoor steps in concrete, timber or steel connecting levels around the home.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["external steps", "concrete steps", "timber stairs external"],
   },
   {
@@ -1677,6 +1830,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Timber or metal screens beside stairs and voids that divide space without closing it.",
     trade: "metalwork",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["batten screen", "stair screen", "slatted screen"],
   },
@@ -1687,6 +1841,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A home lift between floors: the shaft and pit the structure provides, and the lift unit itself with its power, doors, commissioning and certification.",
     trade: "special_provisions",
+    tier: "conditional",
     allowance: "ps",
     aliases: [
       "lift",
@@ -1708,6 +1863,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The kitchen's base and overhead cupboards, drawers, panels and kickboards, made and installed to the kitchen drawings.",
     trade: "joinery",
+    tier: "core",
     aliases: ["kitchen joinery", "base units", "overheads", "soft close", "polyurethane doors", "laminate doors"],
   },
   {
@@ -1717,6 +1873,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The kitchen and vanity tops, from laminate to engineered stone to natural stone, templated and installed.",
     trade: "joinery",
+    tier: "core",
     allowance: "pc",
     aliases: ["stone benchtop", "20mm stone", "40mm stone", "caesarstone", "laminate benchtop", "waterfall end"],
   },
@@ -1727,6 +1884,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The freestanding island with its cabinetry, panels and seating overhang.",
     trade: "joinery",
+    tier: "conditional",
     aliases: ["island", "breakfast bar", "island panels"],
   },
   {
@@ -1736,6 +1894,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The second working kitchen behind the kitchen: benches, shelving and cabinetry in the pantry room.",
     trade: "joinery",
+    tier: "conditional",
     aliases: ["butlers pantry", "scullery", "walk in pantry fitout", "wip"],
   },
   {
@@ -1745,6 +1904,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The vanity units in each bathroom and powder room, wall hung or floor standing, with their tops.",
     trade: "joinery",
+    tier: "core",
     allowance: "pc",
     aliases: ["vanity", "wall hung vanity", "vanity unit"],
   },
@@ -1755,6 +1915,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The laundry's benches, cupboards and tall storage built around the trough and machines.",
     trade: "joinery",
+    tier: "core",
     aliases: ["laundry cupboards", "laundry bench", "broom cupboard"],
   },
   {
@@ -1764,6 +1925,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The upgraded internals of robes: drawers, shelves, hanging in a walk-in or built-in configuration.",
     trade: "joinery",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["wir fitout", "walk in robe", "robe internals", "bir fitout"],
   },
@@ -1774,6 +1936,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Built-in TV units, bookshelves and desks made to the joinery drawings.",
     trade: "joinery",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["tv unit", "study nook", "built in desk", "bookshelf joinery"],
   },
@@ -1784,6 +1947,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "One-off cabinetry pieces beyond the standard rooms, carried as an allowance until detailed.",
     trade: "joinery",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["custom joinery", "bar joinery", "wine display", "mudroom joinery"],
   },
@@ -1796,6 +1960,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The membrane under and around showers, baths and laundry floors, applied by a licensed applicator to the standard.",
     trade: "tiling",
+    tier: "core",
     aliases: ["wet seal", "membrane", "as 3740", "shower waterproofing", "bathroom membrane"],
   },
   {
@@ -1805,6 +1970,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The external-grade membrane on balconies over rooms, the single detail most worth doing perfectly.",
     trade: "tiling",
+    tier: "conditional",
     aliases: ["balcony membrane", "external waterproofing", "as 4654"],
   },
   {
@@ -1814,6 +1980,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Waterproofing to planter boxes and walls below ground level.",
     trade: "tiling",
+    tier: "conditional",
     appliesTo: ["multi_dwelling", "single_dwelling"],
     aliases: ["tanking", "planter waterproofing", "retaining tanking"],
   },
@@ -1824,6 +1991,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The screeds, hobs and recessed niches that shape each shower before it is tiled.",
     trade: "tiling",
+    tier: "core",
     aliases: ["shower hob", "hobless shower", "niche", "shower base screed"],
   },
   {
@@ -1833,6 +2001,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The applicator's certificate for every membrane, kept on record because this work disappears under tiles.",
     trade: "tiling",
+    tier: "commercial",
     aliases: ["waterproofing certificate", "form 43", "compliance certificate waterproofing"],
   },
 
@@ -1844,6 +2013,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The floor tiles themselves, carried at a rate per square metre until you choose them.",
     trade: "tiling",
+    tier: "core",
     allowance: "pc",
     aliases: ["floor tile pc", "tile allowance", "porcelain floor tiles", "600x600"],
   },
@@ -1854,6 +2024,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The wall tiles for bathrooms, splashbacks and features, carried at a rate until selected.",
     trade: "tiling",
+    tier: "core",
     allowance: "pc",
     aliases: ["wall tile pc", "subway tiles", "splashback tiles", "feature tiles"],
   },
@@ -1864,6 +2035,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Laying the floor tiles: preparation, adhesive, cutting, grouting and sealing.",
     trade: "tiling",
+    tier: "core",
     aliases: ["floor tiling labour", "lay floor tiles", "tile laying"],
   },
   {
@@ -1873,6 +2045,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Fixing wall tiles to the heights on the drawings, from splashbacks to full-height bathroom walls.",
     trade: "tiling",
+    tier: "core",
     aliases: ["wall tiling labour", "tile to ceiling", "half height tiling"],
   },
   {
@@ -1882,6 +2055,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The detailed tiling work: niches, mitred edges, herringbone patterns and mosaic features.",
     trade: "tiling",
+    tier: "conditional",
     aliases: ["mitred edge", "herringbone", "mosaic", "niche tiling"],
   },
   {
@@ -1891,6 +2065,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The mortar beds that create falls to floor wastes so water goes where it should.",
     trade: "tiling",
+    tier: "core",
     aliases: ["screed", "fall to waste", "bed and fall"],
   },
   {
@@ -1900,6 +2075,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The metal edges, corners and flexible joints that finish tiled surfaces properly.",
     trade: "tiling",
+    tier: "core",
     aliases: ["tile trim", "aluminium angle", "movement joint", "silicone junctions"],
   },
 
@@ -1911,6 +2087,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Timber floors through the living spaces, floating or glued, in the species and width you select.",
     trade: "internal_finishes",
+    tier: "alternative",
     allowance: "pc",
     aliases: ["engineered oak", "solid timber floor", "herringbone timber", "floating floor"],
   },
@@ -1921,6 +2098,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Hard-wearing laminate or waterproof hybrid planks as a practical alternative to timber.",
     trade: "internal_finishes",
+    tier: "alternative",
     allowance: "pc",
     aliases: ["hybrid flooring", "laminate", "spc", "vinyl plank"],
   },
@@ -1931,6 +2109,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Carpet to bedrooms and quiet rooms, with underlay, at a rate until you choose it.",
     trade: "internal_finishes",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["carpet pc", "wool carpet", "underlay", "carpet to bedrooms"],
   },
@@ -1941,6 +2120,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The slab itself ground and sealed as the finished floor, planned before the concrete is even poured.",
     trade: "concrete_work",
+    tier: "alternative",
     aliases: ["polished concrete", "honed concrete", "grind and seal", "mechanically polished"],
   },
   {
@@ -1950,6 +2130,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Bringing existing floorboards back: sanding, repairs and coating.",
     trade: "internal_finishes",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     aliases: ["sand and polish", "floor sanding", "refinish floorboards"],
   },
@@ -1960,6 +2141,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Grinding and self-levelling compounds that make substrates flat enough for the finished floor.",
     trade: "internal_finishes",
+    tier: "conditional",
     aliases: ["self leveller", "ardit", "floor prep", "grinding"],
   },
 
@@ -1971,6 +2153,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Preparation and a full paint system to every internal wall and ceiling, in your chosen colours.",
     trade: "painting",
+    tier: "core",
     aliases: ["three coat system", "internal painting", "ceiling white", "low sheen"],
   },
   {
@@ -1980,6 +2163,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The durable enamel finish on doors, skirtings, architraves and window trim.",
     trade: "painting",
+    tier: "core",
     aliases: ["enamel", "gloss trim", "semi gloss", "doors and jambs"],
   },
   {
@@ -1989,6 +2173,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Painting the outside: render, cladding, eaves and external timberwork in exterior-grade systems.",
     trade: "painting",
+    tier: "core",
     aliases: ["external paint", "render paint", "weathershield", "eaves paint"],
   },
   {
@@ -1998,6 +2183,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Stains, oils and clear coats on feature timber inside and out.",
     trade: "painting",
+    tier: "conditional",
     aliases: ["stain", "decking oil", "clear coat", "cutek", "intergrain"],
   },
   {
@@ -2007,6 +2193,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Garage floor epoxy and any special-purpose coatings beyond standard paint.",
     trade: "painting",
+    tier: "conditional",
     aliases: ["epoxy floor", "garage epoxy", "flake floor"],
   },
 
@@ -2018,6 +2205,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "All the water and drainage pipework inside walls and floors, run before linings close them in.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["rough in", "pipework", "pex", "stack work"],
   },
   {
@@ -2027,6 +2215,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Connecting and commissioning every fixture and tap at the end of the build.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["fit off", "fixture installation", "commissioning"],
   },
   {
@@ -2036,6 +2225,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The toilets, basins, baths and sinks themselves, carried as prime cost items until you select them.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["toilet suite", "back to wall", "freestanding bath", "undermount sink", "basin"],
   },
@@ -2046,6 +2236,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The taps, mixers, shower rails and outlets throughout, carried as prime cost items until selected.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["mixers", "shower rail", "rain shower", "wall spout", "tapware pc"],
   },
@@ -2056,6 +2247,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The glass screens to each shower and the mirrors above vanities, measured and fitted near handover.",
     trade: "glazing",
+    tier: "core",
     allowance: "pc",
     aliases: ["frameless screen", "semi frameless", "fixed panel", "mirror"],
   },
@@ -2066,6 +2258,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The unit that heats the home's water: heat pump, gas continuous flow, electric or solar.",
     trade: "hydraulic_services",
+    tier: "core",
     allowance: "pc",
     aliases: ["heat pump", "continuous flow", "instantaneous", "hws", "solar hot water"],
   },
@@ -2076,6 +2269,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Gas runs to the cooktop, heater and any outdoor point.",
     trade: "hydraulic_services",
+    tier: "conditional",
     aliases: ["gas point", "gas cooktop line", "bayonet"],
   },
   {
@@ -2085,6 +2279,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The drains in bathroom and laundry floors, including linear strip drains where specified.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["floor waste", "strip drain", "linear drain", "puddle flange"],
   },
   {
@@ -2094,6 +2289,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Water points for the fridge, dishwasher and washing machine.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["fridge point", "dishwasher point", "washing machine taps"],
   },
   {
@@ -2103,6 +2299,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Garden taps around the home and any outdoor kitchen or pool top-up points.",
     trade: "hydraulic_services",
+    tier: "core",
     aliases: ["hose cock", "garden tap", "external tap"],
   },
 
@@ -2114,6 +2311,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "All the cabling through the frame before linings: circuits, points and switch runs.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["electrical rough in", "cabling", "prewire"],
   },
   {
@@ -2123,6 +2321,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Installing the visible electrical parts and making every circuit live and tested.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["electrical fit off", "switch plates", "testing and certification"],
   },
   {
@@ -2132,6 +2331,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The home's electrical heart, with the safety switches and circuit protection the code requires.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["switchboard", "rcbo", "main switch", "meter box"],
   },
   {
@@ -2141,6 +2341,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The general power outlets through the home, counted on the electrical plan.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["gpo", "double power point", "usb outlet", "power point count"],
   },
   {
@@ -2150,6 +2351,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The light positions and their switches, including two-way switching where the plan shows it.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["light point", "batten point", "downlight", "two way switching", "dimmer"],
   },
   {
@@ -2159,6 +2361,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The actual fittings: downlights, pendants and wall lights, carried as prime cost items until you choose them.",
     trade: "electrical_services",
+    tier: "core",
     allowance: "pc",
     aliases: ["light fittings pc", "pendants", "feature lighting", "led downlights"],
   },
@@ -2169,6 +2372,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Interconnected smoke alarms in the positions the law requires.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["interconnected smoke alarms", "photoelectric", "240v smoke detector"],
   },
   {
@@ -2178,6 +2382,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Network and television points, plus the antenna, wired where screens and desks will live.",
     trade: "electrical_services",
+    tier: "core",
     aliases: ["data point", "cat6", "tv point", "antenna"],
   },
   {
@@ -2187,6 +2392,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Prewiring or full fit-out for alarms, cameras and video intercoms.",
     trade: "electrical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["alarm prewire", "cctv", "video intercom", "security system"],
   },
@@ -2197,6 +2403,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Ceiling fans to bedrooms and living areas, supplied and installed.",
     trade: "electrical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["ceiling fan", "fan with light"],
   },
@@ -2207,6 +2414,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Rooftop solar panels and inverter, with battery provision if specified.",
     trade: "electrical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["solar panels", "pv system", "inverter", "battery ready"],
   },
@@ -2217,6 +2425,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The dedicated circuit, and optionally the charger, for an electric car in the garage.",
     trade: "electrical_services",
+    tier: "conditional",
     aliases: ["ev charger", "ev provision", "32a circuit", "type 2"],
   },
 
@@ -2228,6 +2437,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A whole-home ducted reverse cycle system, zoned so you condition only the rooms in use.",
     trade: "mechanical_services",
+    tier: "alternative",
     allowance: "pc",
     aliases: ["ducted reverse cycle", "zoned aircon", "ducted ac", "refrigerated cooling"],
   },
@@ -2238,6 +2448,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Individual wall units heating and cooling specific rooms.",
     trade: "mechanical_services",
+    tier: "alternative",
     allowance: "pc",
     aliases: ["split system", "wall split", "multi head"],
   },
@@ -2248,6 +2459,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Radiator or in-slab hydronic heating, or flued gas heaters, where the design calls for them.",
     trade: "mechanical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["hydronic", "in slab heating", "radiators", "gas log fire"],
   },
@@ -2258,6 +2470,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Bathroom, toilet and rangehood exhausts, ducted to outside air as the code requires.",
     trade: "mechanical_services",
+    tier: "core",
     aliases: ["exhaust fan", "ducted to atmosphere", "rangehood duct", "ixl"],
   },
   {
@@ -2267,6 +2480,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Heat recovery or supply ventilation systems for airtight, energy-efficient homes.",
     trade: "mechanical_services",
+    tier: "conditional",
     aliases: ["hrv", "erv", "mechanical ventilation", "fresh air system"],
   },
   {
@@ -2276,6 +2490,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A wood or gas fireplace with its flue, hearth and clearances built to the rules.",
     trade: "mechanical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["wood heater", "gas fireplace", "flue kit", "hearth"],
   },
@@ -2288,6 +2503,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Sprinkler protection through the building where its class and height require it.",
     trade: "fire_protection_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["fire sprinklers", "residential sprinklers", "fpaa101d"],
   },
@@ -2298,6 +2514,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The hydrant boosters and hose reels firefighters rely on, tested and certified.",
     trade: "fire_protection_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["fire hydrant", "booster", "hose reel"],
   },
@@ -2308,6 +2525,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Fire doors and sealed service penetrations that hold a fire inside its compartment.",
     trade: "fire_protection_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["fire door", "fire collar", "fire dampers", "penetration sealing"],
   },
@@ -2318,6 +2536,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The building-wide detection and occupant warning system beyond household smoke alarms.",
     trade: "fire_protection_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["fire panel", "ewis", "fip", "detection system"],
   },
@@ -2328,6 +2547,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The portable fire equipment and illuminated exit signs common areas must carry.",
     trade: "fire_protection_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["extinguisher", "fire blanket", "exit sign", "emergency lighting"],
   },
@@ -2340,6 +2560,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The built-in oven, carried as a prime cost item until you choose the brand and model.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["wall oven", "600mm oven", "900mm oven", "pyrolytic"],
   },
@@ -2350,6 +2571,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The gas or induction cooktop, carried as a prime cost item until selected.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["induction cooktop", "gas cooktop", "900mm cooktop"],
   },
@@ -2360,6 +2582,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The rangehood over the cooktop, ducted outside, carried as a prime cost item.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["undermount rangehood", "canopy rangehood", "concealed rangehood"],
   },
@@ -2370,6 +2593,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The dishwasher, integrated or freestanding, carried as a prime cost item.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["integrated dishwasher", "dishdrawer"],
   },
@@ -2380,6 +2604,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The trim kit, shelf and point for a built-in microwave or appliance cupboard.",
     trade: "fixtures_and_fittings",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["microwave trim kit", "appliance cupboard"],
   },
@@ -2390,6 +2615,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Washer and dryer where the build includes them, carried as prime cost items.",
     trade: "fixtures_and_fittings",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["washing machine", "dryer", "washer dryer combo"],
   },
@@ -2400,6 +2626,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The built-in barbecue and outdoor fridge where an alfresco kitchen is specified.",
     trade: "fixtures_and_fittings",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["built in bbq", "outdoor fridge", "alfresco kitchen"],
   },
@@ -2412,6 +2639,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The driveway from street to garage, in plain, coloured or exposed aggregate concrete, including the council crossover.",
     trade: "external_works",
+    tier: "core",
     aliases: ["exposed aggregate", "coloured concrete", "crossover", "layback"],
   },
   {
@@ -2421,6 +2649,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Concrete paths and paved areas around the home.",
     trade: "external_works",
+    tier: "core",
     aliases: ["concrete path", "pavers", "stepping stones", "porcelain paving"],
   },
   {
@@ -2430,6 +2659,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The deck structure and boards, in hardwood or composite, with its footings.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["merbau deck", "spotted gum decking", "composite decking", "deck subframe"],
   },
   {
@@ -2439,6 +2669,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Roofed outdoor structures and the lined ceiling of the alfresco under the main roof.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["pergola", "alfresco lining", "insulated patio roof", "vergola"],
   },
   {
@@ -2448,6 +2679,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Boundary and feature fencing, from timber paling to aluminium slat, with half-share notes where boundaries are shared.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["paling fence", "colorbond fence", "slat fence", "boundary fence"],
   },
@@ -2458,6 +2690,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Pedestrian and driveway gates, with motors where automated.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["sliding gate", "swing gate", "gate motor", "pedestrian gate"],
   },
@@ -2468,6 +2701,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The letterbox and the clothesline, small items the handover checklist always finds.",
     trade: "external_works",
+    tier: "core",
     aliases: ["letterbox", "clothesline", "fold down line"],
   },
   {
@@ -2477,6 +2711,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Lighting to the facade, alfresco, paths and garden beds.",
     trade: "electrical_services",
+    tier: "core",
     allowance: "pc",
     aliases: ["garden lights", "up lights", "step lights", "facade lighting"],
   },
@@ -2487,6 +2722,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The structure and finish of balconies and terraces off upper rooms.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["balcony", "terrace", "juliet balcony"],
   },
 
@@ -2498,6 +2734,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Soil, plants and mulch, carried as a provisional sum until a landscape design exists.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["planting", "garden beds", "mulch", "landscape allowance"],
   },
@@ -2508,6 +2745,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Prepared and laid lawn, natural or synthetic.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["turf", "sir walter", "synthetic grass", "artificial lawn"],
   },
@@ -2518,6 +2756,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Watering systems to lawns and beds, from simple drippers to automated zones.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["drip line", "pop up sprinklers"],
   },
@@ -2528,6 +2767,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The pool itself: shell, filtration and finishes, carried as a provisional sum until the pool design is settled.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["concrete pool", "fibreglass pool", "plunge pool", "spa"],
   },
@@ -2538,6 +2778,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The compliant barrier around any pool, glass or aluminium, certified before water goes in.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["glass pool fence", "pool barrier", "pool certificate"],
   },
   {
@@ -2547,6 +2788,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The machinery that runs the pool: filtration, pumps, sanitation, heating, controls and the electrical bonding that makes it safe, with its plant space and commissioning.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: [
       "pool filtration",
@@ -2567,6 +2809,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Protecting the trees that stay: arborist reports, protection-zone fencing, root-sensitive digging near them and the supervision the council's permit requires.",
     trade: "external_works",
+    tier: "conditional",
     aliases: [
       "tree protection zone",
       "tpz",
@@ -2585,6 +2828,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Decorative water elements, carried as a provisional sum until designed.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["water feature", "pond", "water wall"],
   },
@@ -2595,6 +2839,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Masonry or steel planters built as part of the landscape, drained and waterproofed.",
     trade: "external_works",
+    tier: "conditional",
     aliases: ["planter box", "corten planter", "raised beds"],
   },
 
@@ -2606,6 +2851,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The specific conditions your council attached to the approval, each one a piece of work or paperwork someone must do.",
     trade: "preliminaries",
+    tier: "conditional",
     aliases: ["da conditions", "planning conditions", "condition 1", "prior to occupation"],
   },
   {
@@ -2615,6 +2861,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The pack you receive at the end: appliance manuals, warranties, certificates and maintenance guidance.",
     trade: "preliminaries",
+    tier: "commercial",
     aliases: ["handover pack", "operation and maintenance", "warranty documentation", "as built"],
   },
   {
@@ -2624,6 +2871,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Repairing hidden termite or rot damage found once walls open up, priced as an allowance because nobody can see it beforehand.",
     trade: "carpentry",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     allowance: "ps",
     aliases: ["termite damage", "rot repair", "replace damaged timbers", "latent conditions"],
@@ -2635,6 +2883,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Tarps and temporary roofing that keep your home dry while it is opened up in stages.",
     trade: "preliminaries",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     aliases: ["temporary roof", "tarp", "weather protection"],
   },
@@ -2645,6 +2894,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Testing and disposing of contaminated soil if the dig finds it, an allowance because tips charge by what the soil contains.",
     trade: "ground_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["contaminated fill", "asbestos in soil", "classification testing", "vendec"],
   },
@@ -2655,6 +2905,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A pump system where the home sits below the sewer and gravity cannot do the job.",
     trade: "hydraulic_services",
+    tier: "conditional",
     aliases: ["pump station", "macerator", "pressure sewer", "grinder pump"],
   },
   {
@@ -2664,6 +2915,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The dedicated water connection sized for the building's fire systems.",
     trade: "fire_protection_services",
+    tier: "conditional",
     appliesTo: ["multi_dwelling"],
     aliases: ["fire main", "fire service connection"],
   },
@@ -2674,6 +2926,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Insulation under or around the slab edge, increasingly required to hit higher energy ratings.",
     trade: "concrete_work",
+    tier: "conditional",
     aliases: ["waffle pod insulation", "edge insulation", "under slab insulation", "thermal break"],
   },
   {
@@ -2683,6 +2936,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Replacing failed stumps under an existing floor and bringing it back to level.",
     trade: "carpentry",
+    tier: "conditional",
     appliesTo: ["renovation", "extension"],
     allowance: "ps",
     aliases: ["restump", "reblock", "relevel", "jack and pack"],
@@ -2694,6 +2948,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Natural or manufactured stone as a facade feature, carried as a prime cost item until the stone is chosen.",
     trade: "stonework",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["stone cladding", "stack stone", "travertine cladding", "stone veneer"],
   },
@@ -2704,6 +2959,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Blinds, curtains and shutters. Often excluded from building contracts, so this line makes the answer explicit either way.",
     trade: "fixtures_and_fittings",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["blinds", "roller blinds", "plantation shutters", "curtains", "sheer curtains"],
   },
@@ -2714,6 +2970,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Towel rails, toilet roll holders, robe hooks and shelves, carried as prime cost items until selected.",
     trade: "fixtures_and_fittings",
+    tier: "core",
     allowance: "pc",
     aliases: ["towel rail", "heated towel rail", "toilet roll holder", "robe hook", "accessories pc"],
   },
@@ -2724,6 +2981,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A filtered drinking water tap or whole-home filtration where specified.",
     trade: "hydraulic_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["water filter", "filtered tap", "zip tap", "under sink filter"],
   },
@@ -2734,6 +2992,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The mirrored storage cabinets above vanities, recessed or surface mounted.",
     trade: "joinery",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["shaving cabinet", "mirror cabinet", "recessed cabinet"],
   },
@@ -2744,6 +3003,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Heated floors in bathrooms or living areas, laid under the tiles with a wall thermostat.",
     trade: "electrical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["underfloor heating", "undertile heating", "heated floor"],
   },
@@ -2754,6 +3014,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Smart switching, hubs and the wiring that lets the home be controlled from a phone.",
     trade: "electrical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["smart home", "cbus", "automation", "smart switches"],
   },
@@ -2764,6 +3025,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Individual power and water metering so each dwelling pays its own way.",
     trade: "electrical_services",
+    tier: "core",
     appliesTo: ["multi_dwelling"],
     aliases: ["separate meters", "sub metering", "individual metering"],
   },
@@ -2774,6 +3036,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "A built-in vacuum system with wall inlets through the home.",
     trade: "mechanical_services",
+    tier: "conditional",
     allowance: "pc",
     aliases: ["ducted vacuum", "vacuum inlets", "hide a hose"],
   },
@@ -2784,6 +3047,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "Fixed screens to windows and balconies where planning rules protect neighbours from being overlooked.",
     trade: "metalwork",
+    tier: "conditional",
     aliases: ["overlooking screen", "privacy screen", "obscure screen", "highlight screening"],
   },
   {
@@ -2793,6 +3057,7 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The low garden walls and edging under a metre that shape beds and lawns.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["garden edging", "low retaining", "garden wall"],
   },
@@ -2803,7 +3068,103 @@ export const SCOPE_ITEMS: ScopeItem[] = [
     plain:
       "The specific planting and works your planning approval's landscape plan requires before sign-off.",
     trade: "external_works",
+    tier: "conditional",
     allowance: "ps",
     aliases: ["landscape plan", "approved landscape", "street tree"],
+  },
+];
+
+/**
+ * Sets where choosing one member settles the rest.
+ *
+ * A house has a metal roof or a tiled one. The unchosen sibling is not
+ * missing from the design, and raising it as a gap asks an owner about
+ * a decision they already made. Only the whole group being absent is
+ * ever a question, and even then only for the groups every project must
+ * answer.
+ *
+ * The membership lists are the ratified tiering table's, and every
+ * member is tier "alternative" — a test holds the two in step, because
+ * a member that drifted out of the tier would quietly start gapping
+ * again.
+ */
+export const SCOPE_ALTERNATIVE_GROUPS: ScopeAlternativeGroup[] = [
+  {
+    id: "sewage-disposal",
+    label: "Sewage disposal",
+    members: ["site-services.sewer-connection", "site-services.septic-treatment"],
+    // Every house disposes of sewage somehow. Neither present is a
+    // real hole, not a style choice nobody made.
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "ground-floor-system",
+    label: "Ground floor system",
+    members: [
+      "footings-slab.waffle-slab",
+      "footings-slab.raft-slab",
+      "footings-slab.strip-pad-footings",
+      "footings-slab.subfloor-timber",
+    ],
+    // Strip and pad footings pair with the timber subfloor path; the
+    // slabs stand alone. Every building stands on something, so all
+    // four absent is a genuine hole.
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "roof-structure",
+    label: "Roof structure",
+    members: ["framing.roof-trusses", "framing.stick-roof"],
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "roof-covering",
+    label: "Roof covering",
+    members: ["roofing.metal-roof", "roofing.tile-roof"],
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "external-wall-system",
+    label: "External wall system",
+    members: [
+      "external-walls.brick-veneer",
+      "external-walls.double-brick",
+      "external-walls.blockwork",
+      "external-walls.fc-cladding",
+      "external-walls.metal-cladding",
+      "external-walls.timber-composite-cladding",
+      "external-walls.lightweight-panel",
+    ],
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "window-system",
+    label: "Window system",
+    members: ["windows.aluminium-windows", "windows.timber-composite-windows"],
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "wall-ceiling-junction",
+    label: "Wall and ceiling junction",
+    members: ["lining.cornice", "lining.square-set"],
+    requiredWhenAllAbsent: true,
+  },
+  {
+    id: "hard-floor-finish",
+    label: "Hard floor finish",
+    members: [
+      "flooring.engineered-timber",
+      "flooring.laminate-hybrid",
+      "flooring.polished-concrete",
+    ],
+    // A tile-throughout home satisfies this from the tiling division
+    // instead, so all three absent is not by itself a hole.
+    requiredWhenAllAbsent: false,
+  },
+  {
+    id: "climate-system",
+    label: "Climate system",
+    members: ["hvac.ducted-system", "hvac.split-systems"],
+    requiredWhenAllAbsent: false,
   },
 ];

@@ -49,6 +49,13 @@ import {
   type ItemSemantics,
   type Reconciliation,
 } from "./facts";
+import {
+  SCOPE_ALTERNATIVE_GROUPS,
+  alternativeGroupOf,
+  excludedBy,
+  tierOf,
+} from "@/modules/scope";
+
 import type { SynthesisDocumentInput, SynthesisResult } from "./pipeline";
 
 // ── the facts ───────────────────────────────────────────────────────
@@ -81,6 +88,15 @@ export interface DeterministicFacts {
   /** Items the documents hand to somebody else or defer to a later
    *  package. These can never be priceable. */
   deferred: Map<string, { quote: string; why: string }>;
+  /**
+   * Every item the documents mention AT ALL, however weakly: shown on
+   * a page, or named in any claim. This is the ACTIVATION SIGNAL, and
+   * it is deliberately generous. A conditional item nobody mentioned
+   * is a thing the project does not have; a conditional item mentioned
+   * and then found wanting is a real gap, and the difference between
+   * those two is the whole rule.
+   */
+  mentioned: Set<string>;
 }
 
 /**
@@ -155,6 +171,10 @@ export function collectFacts(
   // unit 1's landscape plan do not remove it from unit 2.
   const projectWideSemantics = indexSemantics(projectWideClaims);
 
+  const mentioned = new Set(shown);
+  for (const c of claims) mentioned.add(c.itemId);
+  for (const f of figures) if (f.itemId) mentioned.add(f.itemId);
+
   return {
     dwellings: counted,
     arithmetic: findArithmeticIdentities(parsed),
@@ -162,6 +182,7 @@ export function collectFacts(
     suppressed: suppressedItems(projectWideSemantics),
     unselected: unselectedItems(semantics, shown),
     shown,
+    mentioned,
     deferred: collectDeferrals(semantics),
   };
 }
@@ -296,9 +317,6 @@ export interface GuardResult {
   addedConflicts: number;
 }
 
-/** Preliminaries are the builder's own cost of being on site. */
-const PRELIMINARIES_DIVISION = "preliminaries";
-
 /**
  * Overrule the model where a fact settles the question.
  *
@@ -354,35 +372,126 @@ export function applyDeterministicGuards(
     item.note = `Mentioned only in ${u.reason}: "${u.quote}". Nothing in the documents selects it.`;
   }
 
+  // ── the tier rules ────────────────────────────────────────────────
+  //
+  // The single largest source of wrong answers in both v6 baselines.
+  // The engine treated all 256 Standard items as owed by every project
+  // and invented 68 gaps on one package and 32 on the other; 79 of
+  // those 100 were conditional or alternative items no residential
+  // project has unless something activates them.
+
+  const settleAsAbsent = (itemId: string, rule: string, note: string) => {
+    const item = byId.get(itemId);
+    if (!item || item.status === "not_expected") return;
+    corrections.push({
+      itemId,
+      field: "status",
+      from: item.status,
+      to: "not_expected",
+      rule,
+    });
+    item.status = "not_expected";
+    item.citations = [];
+    item.gapClass = null;
+    item.priceable = null;
+    item.note = note;
+  };
+
+  // An evidenced system rules out what it structurally precludes. A
+  // parapet-and-box-gutter roof has no eave, so it has no soffit to
+  // line, and calling that a finish gap is reading a roof form the
+  // building does not have. Runs BEFORE the tier rules so a derived
+  // exclusion gives the better reason where both would fire.
+  const evidencedIds = new Set(
+    synthesis.items.filter((i) => i.status === "evidenced").map((i) => i.itemId),
+  );
+  for (const evidencedId of evidencedIds) {
+    for (const ruledOut of excludedBy(evidencedId)) {
+      if (evidencedIds.has(ruledOut)) continue; // the documents show it anyway
+      settleAsAbsent(
+        ruledOut,
+        "ruled-out-by-an-evidenced-system",
+        `Not applicable: the documents evidence ${evidencedId}, which structurally rules this out.`,
+      );
+    }
+  }
+
+  // A member of an alternative group is settled by its chosen sibling.
+  // A house has a metal roof or a tiled one; the other is not missing.
+  for (const group of SCOPE_ALTERNATIVE_GROUPS) {
+    const chosen = group.members.filter((m) => evidencedIds.has(m));
+    if (chosen.length === 0) continue;
+    for (const member of group.members) {
+      if (evidencedIds.has(member)) continue;
+      settleAsAbsent(
+        member,
+        "alternative-already-chosen",
+        `Not applicable: the documents select ${chosen.join(" and ")} for ${group.label}.`,
+      );
+    }
+  }
+
+  // The activation rule. A conditional or alternative item the
+  // documents never mention at all is a thing this project does not
+  // have. One that IS mentioned and then found wanting is a real gap,
+  // and keeping that distinction is why this tests `mentioned` rather
+  // than simply demoting every non-core gap.
+  for (const item of [...synthesis.items]) {
+    if (item.status !== "gap") continue;
+    const tier = tierOf(item.itemId);
+    if (tier !== "conditional" && tier !== "alternative") continue;
+    if (facts.mentioned.has(item.itemId)) continue;
+    const group = alternativeGroupOf(item.itemId);
+    // A group every project must answer, with no member evidenced and
+    // none mentioned, is a genuine hole. Every building stands on
+    // something.
+    if (group?.requiredWhenAllAbsent) {
+      const anyMentioned = group.members.some(
+        (m) => facts.mentioned.has(m) || evidencedIds.has(m),
+      );
+      if (!anyMentioned) continue;
+    }
+    settleAsAbsent(
+      item.itemId,
+      "conditional-without-an-activation-signal",
+      "Not applicable: nothing in the documents indicates this project has it.",
+    );
+  }
+
   for (const item of synthesis.items) {
     if (item.status !== "gap") continue;
-    // Preliminaries are never a design question. Nobody's architect
-    // forgot to draw the scaffolding, and telling an owner to go and
-    // ask for it is the engine misreading who carries what.
-    if (item.itemId.split(".")[0] === PRELIMINARIES_DIVISION) {
+    // Work the documents hand to a consultant is not missing from the
+    // design; it is waiting on a package nobody has issued. This runs
+    // FIRST because it is read from the documents, and a document
+    // beats a fact about the Standard.
+    if (facts.deferred.has(item.itemId)) {
+      if (item.gapClass !== "later_consultant_package") {
+        corrections.push({
+          itemId: item.itemId,
+          field: "gapClass",
+          from: item.gapClass ?? "null",
+          to: "later_consultant_package",
+          rule: "deferred-to-a-later-package",
+        });
+        item.gapClass = "later_consultant_package";
+      }
+      continue;
+    }
+    // Commercial-tier items are the builder's own cost of doing the
+    // work rather than a design decision. Nobody's architect forgot to
+    // draw the scaffolding, and telling an owner to go and ask their
+    // designer for it is the engine misreading who carries what.
+    if (tierOf(item.itemId) === "commercial") {
       if (item.gapClass !== "contractor_obligation") {
         corrections.push({
           itemId: item.itemId,
           field: "gapClass",
           from: item.gapClass ?? "null",
           to: "contractor_obligation",
-          rule: "preliminaries-are-contractor-obligations",
+          rule: "commercial-items-are-contractor-obligations",
         });
         item.gapClass = "contractor_obligation";
       }
-      continue;
-    }
-    // Work the documents hand to a consultant is not missing from the
-    // design; it is waiting on a package nobody has issued.
-    if (facts.deferred.has(item.itemId) && item.gapClass !== "later_consultant_package") {
-      corrections.push({
-        itemId: item.itemId,
-        field: "gapClass",
-        from: item.gapClass ?? "null",
-        to: "later_consultant_package",
-        rule: "deferred-to-a-later-package",
-      });
-      item.gapClass = "later_consultant_package";
     }
   }
 

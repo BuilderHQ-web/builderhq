@@ -14,6 +14,8 @@
 
 import { describe, expect, test } from "vitest";
 
+import { SCOPE_ALTERNATIVE_GROUPS, SCOPE_ITEMS } from "./ontology";
+
 import {
   scorePackage,
   aggregate,
@@ -558,5 +560,79 @@ describe("the package verdict and the corpus roll-up", () => {
     const agg = aggregate([big, small]);
     // 10 of 11 recalled, not the mean of 100% and 0%.
     expect(agg.gaps.recall).toBeCloseTo(10 / 11, 6);
+  });
+});
+
+/**
+ * The Standard's applicability structure, held in step.
+ *
+ * Tiers and alternative groups are two statements of overlapping
+ * facts, written in two places. If a group member drifted out of the
+ * alternative tier it would silently start gapping again, and the
+ * failure would show up as a golden score moving for no nameable
+ * reason months later.
+ */
+describe("the tier table", () => {
+  test("every item carries a tier", () => {
+    const untiered = SCOPE_ITEMS.filter((i) => !i.tier);
+    expect(untiered.map((i) => i.id)).toEqual([]);
+  });
+
+  test("every alternative-group member is tier alternative", () => {
+    const wrong: string[] = [];
+    for (const g of SCOPE_ALTERNATIVE_GROUPS) {
+      for (const m of g.members) {
+        const item = SCOPE_ITEMS.find((i) => i.id === m);
+        if (!item) wrong.push(`${m} (not in the Standard)`);
+        else if (item.tier !== "alternative") wrong.push(`${m} is ${item.tier}`);
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  test("every alternative-tier item belongs to a group", () => {
+    // The converse. An alternative item with no group has no sibling
+    // to be settled by, so it would behave as a conditional item that
+    // merely looks classified.
+    const grouped = new Set(SCOPE_ALTERNATIVE_GROUPS.flatMap((g) => g.members));
+    const orphans = SCOPE_ITEMS.filter(
+      (i) => i.tier === "alternative" && !grouped.has(i.id),
+    );
+    expect(orphans.map((i) => i.id)).toEqual([]);
+  });
+
+  test("no item sits in two groups", () => {
+    const seen = new Map<string, string>();
+    const dupes: string[] = [];
+    for (const g of SCOPE_ALTERNATIVE_GROUPS) {
+      for (const m of g.members) {
+        if (seen.has(m)) dupes.push(`${m}: ${seen.get(m)} and ${g.id}`);
+        seen.set(m, g.id);
+      }
+    }
+    expect(dupes).toEqual([]);
+  });
+
+  test("every excluded id is a real Standard item", () => {
+    // A typo here would silently do nothing, which is the worst
+    // outcome: the rule looks configured and never fires.
+    const ids = new Set(SCOPE_ITEMS.map((i) => i.id));
+    const dangling: string[] = [];
+    for (const i of SCOPE_ITEMS) {
+      for (const x of i.excludes ?? []) if (!ids.has(x)) dangling.push(`${i.id} -> ${x}`);
+    }
+    expect(dangling).toEqual([]);
+  });
+
+  test("nothing excludes itself, and no pair excludes both ways", () => {
+    const bad: string[] = [];
+    for (const i of SCOPE_ITEMS) {
+      for (const x of i.excludes ?? []) {
+        if (x === i.id) bad.push(`${i.id} excludes itself`);
+        const other = SCOPE_ITEMS.find((o) => o.id === x);
+        if (other?.excludes?.includes(i.id)) bad.push(`${i.id} and ${x} exclude each other`);
+      }
+    }
+    expect(bad).toEqual([]);
   });
 });

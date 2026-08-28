@@ -9,26 +9,60 @@
  */
 
 import {
+  SCOPE_ALTERNATIVE_GROUPS,
   SCOPE_DIVISIONS,
   SCOPE_ITEMS,
   SCOPE_STANDARD_VERSION,
 } from "./ontology";
 import type {
   AllowanceClass,
+  ScopeAlternativeGroup,
   ScopeDivision,
   ScopeItem,
   ScopeProjectType,
   ScopeSelectionEntry,
+  ScopeTier,
 } from "./types";
 
-export { SCOPE_DIVISIONS, SCOPE_ITEMS, SCOPE_STANDARD_VERSION };
+export {
+  SCOPE_ALTERNATIVE_GROUPS,
+  SCOPE_DIVISIONS,
+  SCOPE_ITEMS,
+  SCOPE_STANDARD_VERSION,
+};
 export type {
   AllowanceClass,
+  ScopeAlternativeGroup,
   ScopeDivision,
   ScopeItem,
   ScopeProjectType,
   ScopeSelectionEntry,
+  ScopeTier,
 };
+
+/**
+ * What an item's ABSENCE means. The single most consequential fact in
+ * the Standard: without it the engine treats all 256 items as owed and
+ * invents a gap for every one a project simply does not have.
+ */
+export function tierOf(itemId: string): ScopeTier | null {
+  return ITEM_BY_ID.get(itemId)?.tier ?? null;
+}
+
+/**
+ * Items an evidenced item structurally rules out.
+ *
+ * Directional, never symmetric: box gutters exclude eaves, and the
+ * absence of eaves implies nothing about box gutters.
+ */
+export function excludedBy(itemId: string): string[] {
+  return ITEM_BY_ID.get(itemId)?.excludes ?? [];
+}
+
+/** The alternative group an item belongs to, if any. */
+export function alternativeGroupOf(itemId: string): ScopeAlternativeGroup | null {
+  return SCOPE_ALTERNATIVE_GROUPS.find((g) => g.members.includes(itemId)) ?? null;
+}
 
 const DIVISION_BY_ID = new Map(SCOPE_DIVISIONS.map((d) => [d.id, d]));
 const ITEM_BY_ID = new Map(SCOPE_ITEMS.map((i) => [i.id, i]));

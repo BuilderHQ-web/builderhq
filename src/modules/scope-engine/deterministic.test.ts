@@ -556,3 +556,170 @@ describe("applyDeterministicGuards", () => {
     expect(r.synthesis.items[0]!.status).toBe("evidenced");
   });
 });
+
+describe("the tier rules", () => {
+  const empty2 = collectFacts([doc([page()])]);
+
+  const mentioning = (itemId: string) =>
+    collectFacts([doc([page({ itemIds: [itemId] })])]);
+
+  test("a conditional item nothing mentions is not a gap", () => {
+    // The single largest source of wrong answers in both baselines:
+    // asking an owner about a lift on a house that has no lift.
+    const r = applyDeterministicGuards(
+      synth([item("stairs.residential-lift", { status: "gap", citations: [] })]),
+      empty2,
+    );
+    expect(r.synthesis.items[0]!.status).toBe("not_expected");
+    expect(r.corrections[0]!.rule).toBe("conditional-without-an-activation-signal");
+  });
+
+  test("a conditional item the documents DO mention may still gap", () => {
+    // The separating case, and the reason this rule reads `mentioned`
+    // instead of demoting every non-core gap. A lift drawn but never
+    // specified is a real hole, and demoting it would hide it.
+    const r = applyDeterministicGuards(
+      synth([item("stairs.residential-lift", { status: "gap", citations: [] })]),
+      mentioning("stairs.residential-lift"),
+    );
+    expect(r.synthesis.items[0]!.status).toBe("gap");
+    expect(r.corrections).toEqual([]);
+  });
+
+  test("a CORE item nothing mentions is still a gap", () => {
+    // Wall linings are owed by every house. Silence about them is
+    // exactly what a gap is for, and this rule must never touch one.
+    const r = applyDeterministicGuards(
+      synth([item("lining.wall-plasterboard", { status: "gap", citations: [] })]),
+      empty2,
+    );
+    expect(r.synthesis.items[0]!.status).toBe("gap");
+  });
+
+  test("a commercial item nothing mentions is still a gap", () => {
+    // Scaffolding is not mentioned on any drawing ever. It is still
+    // owed; it is just owed by the builder, which is a gap CLASS
+    // question and not an applicability one.
+    const r = applyDeterministicGuards(
+      synth([item("preliminaries.scaffolding", { status: "gap", citations: [] })]),
+      empty2,
+    );
+    expect(r.synthesis.items[0]!.status).toBe("gap");
+    expect(r.synthesis.items[0]!.gapClass).toBe("contractor_obligation");
+  });
+
+  test("commercial gap class reaches beyond preliminaries", () => {
+    const r = applyDeterministicGuards(
+      synth([item("approvals.building-permit", { status: "gap", citations: [] })]),
+      empty2,
+    );
+    expect(r.synthesis.items[0]!.gapClass).toBe("contractor_obligation");
+  });
+
+  test("a document beats the Standard on gap class", () => {
+    // A commercial item the documents defer belongs to the package
+    // that will carry it, not to the builder's preliminaries.
+    const facts = collectFacts([
+      doc([
+        page({
+          claims: [
+            claim("approvals.engineering-design", {
+              polarity: "by_others",
+              quote: "engineering by others",
+            }),
+          ],
+        }),
+      ]),
+    ]);
+    const r = applyDeterministicGuards(
+      synth([item("approvals.engineering-design", { status: "gap", citations: [] })]),
+      facts,
+    );
+    expect(r.synthesis.items[0]!.gapClass).toBe("later_consultant_package");
+  });
+
+  test("an evidenced system rules out what it structurally precludes", () => {
+    // Box gutters sit behind parapet capping. There is no eave, so
+    // there is no soffit to line, and both the engine and an
+    // independent auditor called the missing soffit a finish gap.
+    const r = applyDeterministicGuards(
+      synth([
+        item("roofing.box-gutters", { status: "evidenced" }),
+        item("external-walls.eaves-soffits", { status: "gap", citations: [] }),
+      ]),
+      mentioning("external-walls.eaves-soffits"),
+    );
+    const soffits = r.synthesis.items.find(
+      (i) => i.itemId === "external-walls.eaves-soffits",
+    )!;
+    expect(soffits.status).toBe("not_expected");
+    expect(soffits.note).toContain("roofing.box-gutters");
+    expect(r.corrections[0]!.rule).toBe("ruled-out-by-an-evidenced-system");
+  });
+
+  test("an exclusion does not fire when the documents show the item anyway", () => {
+    // The separating case. If the drawings genuinely show eaves, the
+    // rule must yield to them: the documents beat the inference.
+    const r = applyDeterministicGuards(
+      synth([
+        item("roofing.box-gutters", { status: "evidenced" }),
+        item("external-walls.eaves-soffits", { status: "evidenced" }),
+      ]),
+      empty2,
+    );
+    expect(
+      r.synthesis.items.find((i) => i.itemId === "external-walls.eaves-soffits")!.status,
+    ).toBe("evidenced");
+  });
+
+  test("exclusion is directional, never symmetric", () => {
+    // Box gutters exclude eaves. Eaves say nothing about box gutters,
+    // and a symmetric relation would let a missing item delete a
+    // present one.
+    const r = applyDeterministicGuards(
+      synth([
+        item("external-walls.eaves-soffits", { status: "evidenced" }),
+        item("roofing.box-gutters", { status: "gap", citations: [] }),
+      ]),
+      mentioning("roofing.box-gutters"),
+    );
+    expect(
+      r.synthesis.items.find((i) => i.itemId === "roofing.box-gutters")!.status,
+    ).toBe("gap");
+  });
+
+  test("a chosen alternative settles its siblings", () => {
+    const r = applyDeterministicGuards(
+      synth([
+        item("roofing.metal-roof", { status: "evidenced" }),
+        item("roofing.tile-roof", { status: "gap", citations: [] }),
+      ]),
+      mentioning("roofing.tile-roof"),
+    );
+    const tile = r.synthesis.items.find((i) => i.itemId === "roofing.tile-roof")!;
+    expect(tile.status).toBe("not_expected");
+    expect(tile.note).toContain("roofing.metal-roof");
+    expect(r.corrections[0]!.rule).toBe("alternative-already-chosen");
+  });
+
+  test("a required group with NOTHING chosen or mentioned stays a gap", () => {
+    // Every building stands on something. All four members silent is a
+    // real hole, and the activation rule must not swallow it.
+    const r = applyDeterministicGuards(
+      synth([item("footings-slab.waffle-slab", { status: "gap", citations: [] })]),
+      empty2,
+    );
+    expect(r.synthesis.items[0]!.status).toBe("gap");
+  });
+
+  test("an optional group with nothing chosen is settled, not gapped", () => {
+    // A tiled-throughout home answers the hard-floor question from the
+    // tiling division. Asking for engineered timber as well is asking
+    // about a decision nobody made.
+    const r = applyDeterministicGuards(
+      synth([item("flooring.engineered-timber", { status: "gap", citations: [] })]),
+      empty2,
+    );
+    expect(r.synthesis.items[0]!.status).toBe("not_expected");
+  });
+});
