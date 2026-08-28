@@ -11,6 +11,7 @@ import {
   text,
   integer,
   real,
+  boolean,
   jsonb,
   date,
   timestamp,
@@ -135,6 +136,15 @@ export const scopeRunItems = pgTable(
     depth: text(),
     /** What is still needed, when depth is 'partial'. */
     remaining: text(),
+    /** WHY the work is missing, on gaps only. The difference between
+     *  sending an owner back to their architect and telling them their
+     *  builder carries it. Vocabulary in modules/scope/golden-v2.ts. */
+    gapClass: text("gap_class"),
+    /** Whether a builder could put a fixed price on this without a
+     *  material assumption. Separate from `depth` on purpose: a line
+     *  can be fully documented and still unpriceable because one
+     *  input says "refer engineering". */
+    priceable: boolean(),
     figures: jsonb().notNull().default([]),
     confidence: real(),
     opsStatus: text().notNull().default("pending"),

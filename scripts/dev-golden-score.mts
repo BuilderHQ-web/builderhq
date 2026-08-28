@@ -59,6 +59,11 @@ interface RunExport {
     itemId: string;
     status: string;
     depth: string | null;
+    /** Wave 1 onward. Absent on a v6 export, which is why both are
+     *  optional: an old baseline must still score, falling back to the
+     *  depth-as-priceability approximation it was scored under. */
+    gapClass?: string | null;
+    priceable?: boolean | null;
     citations: Array<{ file: string; page: number | null }>;
     figures?: unknown[];
   }>;
@@ -72,6 +77,8 @@ const out: PipelineOutputForScoring = {
       itemId: i.itemId,
       status: i.status as ScoredItem["status"],
       depth: (i.depth as "full" | "partial" | null) ?? null,
+      gapClass: i.gapClass ?? null,
+      priceable: typeof i.priceable === "boolean" ? i.priceable : null,
       citations: (i.citations ?? []).map((c) => ({ file: c.file, page: c.page })),
     }),
   ),

@@ -91,6 +91,8 @@ const entry = (
   note: null,
   depth: null,
   remaining: null,
+  gapClass: null,
+  priceable: null,
   confidence,
 });
 
@@ -152,6 +154,8 @@ describe("enforceCitationConsistency", () => {
       note: "No appliance schedule.",
       depth: null,
       remaining: null,
+      gapClass: null,
+      priceable: null,
       confidence: 0.8,
     };
     const r = enforceCitationConsistency([gap], DOCS);
@@ -220,6 +224,8 @@ describe("coverageReport — the invariant", () => {
       note: null,
       depth: null,
       remaining: null,
+      gapClass: null,
+      priceable: null,
       confidence: 0.9,
     }));
     const enforced = enforceCitationConsistency(modelItems, DOCS);
@@ -966,6 +972,8 @@ describe("enforceSourceAuthority", () => {
     note: "x",
     depth: "full" as const,
     remaining: null,
+    gapClass: null,
+    priceable: null,
     confidence: 0.8,
   });
 
@@ -1035,6 +1043,8 @@ describe("enforceSourceAuthority", () => {
       note: null,
       depth: null,
       remaining: null,
+      gapClass: null,
+      priceable: null,
       confidence: 0.5,
     };
     const r = enforceSourceAuthority([gap], docs, new Set());
@@ -1085,6 +1095,8 @@ describe("enforceNoteGrounding", () => {
           note: "Internal staircase with bluestone treads.",
           depth: "full",
           remaining: null,
+          gapClass: null,
+          priceable: null,
           confidence: 0.8,
         },
       ],
@@ -1114,6 +1126,8 @@ describe("enforceNoteGrounding", () => {
           note: "Internal staircase with mild steel handrail in clear lacquer.",
           depth: "full",
           remaining: null,
+          gapClass: null,
+          priceable: null,
           confidence: 0.8,
         },
       ],
@@ -1139,6 +1153,8 @@ describe("enforceNoteGrounding", () => {
           note: "Kitchen cabinetry generously proportioned with overhead cupboards.",
           depth: "full",
           remaining: null,
+          gapClass: null,
+          priceable: null,
           confidence: 0.9,
         },
       ],
@@ -1288,6 +1304,8 @@ describe("enforceNoteGrounding — plurals and sparse pages never punish", () =>
           note: "External stair with concrete tread and steel stringer.",
           depth: "full",
           remaining: null,
+          gapClass: null,
+          priceable: null,
           confidence: 0.8,
         },
       ],
@@ -1306,6 +1324,8 @@ describe("enforceNoteGrounding — plurals and sparse pages never punish", () =>
           note: "External stairs with bluestone treads.",
           depth: "full",
           remaining: null,
+          gapClass: null,
+          priceable: null,
           confidence: 0.8,
         },
       ],

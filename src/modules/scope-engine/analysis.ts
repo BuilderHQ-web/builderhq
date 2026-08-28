@@ -191,6 +191,11 @@ export function foldResiduals(
     if (v) {
       return {
         itemId,
+        // The residual classifier answers WHETHER, never WHY or what a
+        // builder could price from. Both stay null here and are filled
+        // by the deterministic guards, which can actually tell.
+        gapClass: null,
+        priceable: null,
         status: v.verdict,
         citations: [],
         note: v.note,
@@ -199,6 +204,9 @@ export function foldResiduals(
         confidence: 0.7,
       };
     }
+    // The classifier said nothing at all about this item. A defensive
+    // gap is right; a class for it would be invention, so it stays
+    // null for the deterministic guards to fill.
     return {
       itemId,
       status: "gap" as const,
@@ -206,6 +214,8 @@ export function foldResiduals(
       note: getScopeItem(itemId)?.plain ?? plainById.get(itemId) ?? null,
       depth: null,
       remaining: null,
+      gapClass: null,
+      priceable: null,
       confidence: 0.5,
     };
   });

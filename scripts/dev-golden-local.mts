@@ -408,6 +408,8 @@ const result = {
     note: i.note,
     depth: i.depth,
     remaining: i.remaining,
+    gapClass: i.gapClass,
+    priceable: i.priceable,
     citations: i.citations.map((c) => ({
       doc: forSynthesis.find((d) => d.documentId === c.documentId)?.filename ?? c.documentId,
       page: c.page,

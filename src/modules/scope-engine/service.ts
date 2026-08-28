@@ -783,6 +783,8 @@ export async function processRunTick(
         note: capture.note,
         depth: null,
         remaining: null,
+        gapClass: null,
+        priceable: null,
         confidence: capture.confidence,
       }),
     );
@@ -1088,6 +1090,12 @@ export async function processRunTick(
             : null,
           depth: i.depth,
           remaining: i.remaining,
+          // WHY the work is missing, and whether a builder could put a
+          // fixed price on it. Both are settled by the deterministic
+          // guards before they reach here, so this write is a record of
+          // a decision rather than a place one gets made.
+          gapClass: i.gapClass,
+          priceable: i.priceable,
           confidence: i.confidence,
           ...verdictFor(carriedVerdicts, i.itemId, i.status, i.note),
         })),

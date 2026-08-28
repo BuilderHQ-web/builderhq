@@ -38,6 +38,11 @@ import { z } from "zod";
 import { anthropic } from "@/modules/extraction/client";
 import { logger } from "@/lib/logger";
 import {
+  applyDeterministicGuards,
+  collectFacts,
+  renderFacts,
+} from "./deterministic";
+import {
   SCOPE_DIVISIONS,
   SCOPE_STANDARD_VERSION,
   getScopeItem,
@@ -686,6 +691,33 @@ export const VIEW_TYPES = [
   "other",
 ] as const;
 
+/**
+ * WHY a gap exists, which is a different question from whether one
+ * does. Sending an owner back to their architect for work their
+ * builder was always going to carry is the single most expensive kind
+ * of wrong answer this engine can give.
+ *
+ * Mirrors GoldenGapClass in modules/scope/golden-v2.ts. The two must
+ * stay in step: the corpus grades against this vocabulary, and a class
+ * the scorer does not know is scored as wrong rather than as unknown.
+ */
+export const GAP_CLASSES = [
+  /** The documents simply never resolved it. Back to the designer. */
+  "design_gap",
+  /** Named in the pack and not supplied. Ask for it; do not commission it. */
+  "referenced_package_missing",
+  /** Belongs to engineering or a consultant package not yet issued. */
+  "later_consultant_package",
+  /** A trade designs it under the building contract. */
+  "delegated_design",
+  /** Carried as a sum rather than designed. */
+  "commercial_allowance",
+  /** The builder's own obligation. Never a design question. */
+  "contractor_obligation",
+  /** An authority decides it. */
+  "statutory",
+] as const;
+
 export const FIGURE_BASIS = [
   "per_dwelling",
   "total_project",
@@ -1221,6 +1253,32 @@ export const SelectionEntrySchema = z.object({
     .string()
     .nullish()
     .transform((v) => (v ? v.trim().slice(0, 300) : null)),
+  /**
+   * WHY the work is missing. Gaps only; null elsewhere.
+   *
+   * Deliberately NOT `enumish`, which substitutes a fallback for an
+   * absent value. A fallback here would stamp "design_gap" on every
+   * evidenced line in the pack and score as a confident wrong answer
+   * on lines the model never meant to classify. Absent must stay
+   * absent, and an unrecognised class must become absent too.
+   */
+  gapClass: z
+    .string()
+    .nullish()
+    .transform((v) =>
+      v && (GAP_CLASSES as readonly string[]).includes(v) ? v : null,
+    ),
+  /**
+   * Could a builder put a fixed price on this without a material
+   * assumption? Kept apart from `depth` because the Wallace pack
+   * proved they are different questions: a wall-frame line carried a
+   * full stud schedule and was still unpriceable, because bracing said
+   * "refer engineering".
+   */
+  priceable: z
+    .boolean()
+    .nullish()
+    .transform((v) => (typeof v === "boolean" ? v : null)),
   confidence: z.number().min(0).max(1).nullish().transform((v) => v ?? 0.5),
 });
 
@@ -1387,9 +1445,29 @@ const SYNTHESIS_TOOL: Anthropic.Tool = {
               description:
                 "When depth is 'partial': one line naming what is still needed ('shown on plans; no written specification or product schedule').",
             },
+            gapClass: {
+              type: ["string", "null"],
+              enum: [
+                "design_gap",
+                "referenced_package_missing",
+                "later_consultant_package",
+                "delegated_design",
+                "commercial_allowance",
+                "contractor_obligation",
+                "statutory",
+                null,
+              ],
+              description:
+                "GAPS ONLY, null otherwise. WHY the work is missing, which decides who the owner should go to. design_gap = the designer never resolved it. referenced_package_missing = the documents name a package that is not in the pack; ask for it, do not commission it. later_consultant_package = it belongs to engineering or a consultant set not yet issued. delegated_design = a trade designs it under the building contract (trusses, waterproofing falls). commercial_allowance = carried as a sum rather than designed (PC and PS items). contractor_obligation = the builder's own to arrange and was never a design question (scaffolding, site supervision, temporary works, waste, insurances). statutory = an authority decides it.",
+            },
+            priceable: {
+              type: ["boolean", "null"],
+              description:
+                "EVIDENCED ITEMS ONLY, null otherwise. Could a builder put a FIXED price on this line today without a material assumption? This is a stricter question than depth. A line can be fully drawn and dimensioned and still be false here, because one governing input is deferred: anything that says 'refer engineering', 'to engineer's details', 'by others', 'TBC', 'allow', or that depends on a document the pack does not contain, is NOT priceable no matter how completely the rest is drawn.",
+            },
             confidence: { type: "number", description: "0 to 1." },
           },
-          required: ["itemId", "status", "citations", "note", "depth", "remaining", "confidence"],
+          required: ["itemId", "status", "citations", "note", "depth", "remaining", "gapClass", "priceable", "confidence"],
         },
       },
       captures: {
@@ -1481,6 +1559,11 @@ export async function synthesiseRun(args: {
   /** The living vocabulary — learned items the model may evidence. */
   extensions?: ExtensionItem[];
 }): Promise<{ synthesis: SynthesisResult; usage: StageUsage; salvaged: number }> {
+  // The filter drops pages carrying nothing, to keep the context on
+  // pages that say something. It must test EVERY channel v7 added:
+  // a general-notes sheet whose only content is "NO IRRIGATION" has no
+  // itemIds and no figures, and dropping it would throw away the one
+  // page in the pack that settles the question.
   const payload = JSON.stringify(
     args.documents.map((d) => ({
       documentId: d.documentId,
@@ -1491,12 +1574,18 @@ export async function synthesiseRun(args: {
         (p) =>
           p.itemIds.length > 0 ||
           p.statedFigures.length > 0 ||
+          (p.claims?.length ?? 0) > 0 ||
+          (p.schedules?.length ?? 0) > 0 ||
           (p.offStandard?.length ?? 0) > 0 ||
           (p.docRefs?.length ?? 0) > 0 ||
           p.note,
       ),
     })),
   );
+
+  // Everything code can settle, settled before the model is asked.
+  const facts = collectFacts(args.documents);
+  const factsBlock = renderFacts(facts);
   const message = await anthropic()
     .messages.stream({
     model: SYNTHESIS_MODEL,
@@ -1520,7 +1609,10 @@ export async function synthesiseRun(args: {
         content: [
           {
             type: "text",
-            text: `Project type: ${args.projectType}. The documents' findings:\n\n${payload}\n\nRecord the synthesis with the record_scope_synthesis tool.`,
+            text:
+              `Project type: ${args.projectType}. The documents' findings:\n\n${payload}\n\n` +
+              (factsBlock ? `${factsBlock}\n\n` : "") +
+              `Record the synthesis with the record_scope_synthesis tool.`,
           },
         ],
       },
@@ -1644,8 +1736,37 @@ export async function synthesiseRun(args: {
     overview = null;
   }
   logHeadroom("synthesis", message.usage.output_tokens, SYNTHESIS_MAX_TOKENS);
+
+  // The guards run LAST, after every other enforcement rule, so nothing
+  // downstream can undo them. They re-read the facts with the dwelling
+  // count the synthesis just produced, which is a better number than
+  // the one counted off the findings before the model had spoken.
+  const finalFacts =
+    overview?.dwellings && overview.dwellings !== facts.dwellings
+      ? collectFacts(args.documents, { dwellings: overview.dwellings })
+      : facts;
+  const guarded = applyDeterministicGuards(
+    { overview, items, conflicts, captures },
+    finalFacts,
+  );
+  if (guarded.corrections.length > 0 || guarded.addedConflicts > 0) {
+    logger.info(
+      {
+        event: "scope.synthesis.deterministic_guards",
+        corrections: guarded.corrections.length,
+        addedConflicts: guarded.addedConflicts,
+        // The rules that fired, and how often. This is the line that
+        // says WHICH rule moved a golden score.
+        byRule: guarded.corrections.reduce<Record<string, number>>((acc, c) => {
+          acc[c.rule] = (acc[c.rule] ?? 0) + 1;
+          return acc;
+        }, {}),
+      },
+      "deterministic guards overruled the synthesis",
+    );
+  }
   return {
-    synthesis: { overview, items, conflicts, captures },
+    synthesis: guarded.synthesis,
     usage: usageOf(message),
     salvaged: salvagedCount,
   };
