@@ -9,10 +9,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { eq } from "drizzle-orm";
+
 import { auth, unstable_update } from "@/modules/auth";
+import { db } from "@/lib/db";
+import { users } from "@/modules/users";
+import { sendArchitectSignupOpsEmail } from "@/modules/email";
 import { seedSampleRound } from "@/modules/sample";
 import {
   completeArchitectOnboarding,
+  getArchitectProfile,
   upsertArchitectProfile,
 } from "@/modules/profiles";
 import { normaliseAuPhone } from "@/lib/au-phone";
@@ -84,6 +90,40 @@ export async function architectOnboardingAction(
     { event: "onboarding.architect.completed", userId },
     "architect onboarded",
   );
+
+  // Ops heads-up — fire-and-forget so the redirect isn't blocked on
+  // Resend latency, and inside a try/catch so a mail fault can never
+  // cost somebody their onboarding. Must sit ABOVE the redirect:
+  // `redirect()` throws by design, so anything below it never runs.
+  void (async () => {
+    try {
+      const [u] = await db
+        .select({ email: users.email, name: users.name, phone: users.phone })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      const profile = await getArchitectProfile(userId);
+      if (u) {
+        await sendArchitectSignupOpsEmail({
+          architectName: u.name,
+          architectEmail: u.email,
+          // The studio's own contact number is the useful one; the
+          // account phone is the fallback, and either may be absent.
+          architectPhone: profile?.contactPhone ?? u.phone ?? null,
+          practiceName: profile?.practiceName ?? null,
+          suburb: profile?.suburb ?? null,
+          state: profile?.state ?? null,
+          signedUpAt: new Date(),
+        });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.error(
+        { event: "ops_email.architect_signup.threw", userId, msg },
+        "architect signup ops email threw — continuing",
+      );
+    }
+  })();
 
   // Refresh the JWT so in-token flags sync and the shell re-renders
   // with architect chrome.
