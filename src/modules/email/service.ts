@@ -61,6 +61,7 @@ import { ScopeAddendumEmail } from "@/emails/ScopeAddendumEmail";
 import { ScopeRunOpsEmail } from "@/emails/ScopeRunOpsEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
+import { ArchitectSignupOpsEmail } from "@/emails/ArchitectSignupOpsEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
 import { ProjectPublishedBuilderEmail } from "@/emails/ProjectPublishedBuilderEmail";
 import { ProjectPublishedOpsEmail } from "@/emails/ProjectPublishedOpsEmail";
@@ -1679,6 +1680,46 @@ export async function sendOwnerSignupOpsEmail(
   logger.info(
     { event: "email.ops_owner_signup.sent", resendId: data.id },
     "owner signup ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendArchitectSignupOpsEmailInput {
+  architectName: string | null;
+  architectEmail: string;
+  architectPhone: string | null;
+  practiceName: string | null;
+  suburb: string | null;
+  state: string | null;
+  signedUpAt: Date;
+}
+
+export async function sendArchitectSignupOpsEmail(
+  input: SendArchitectSignupOpsEmailInput,
+): Promise<Result<{ id: string }>> {
+  const subject = `[Ops] New architect: ${input.practiceName ?? input.architectName ?? input.architectEmail}`;
+  const [html, text] = await Promise.all([
+    render(ArchitectSignupOpsEmail(input)),
+    render(ArchitectSignupOpsEmail(input), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: OPS_EMAIL,
+    subject,
+    html,
+    text,
+  });
+  if (error) {
+    logger.error(
+      { event: "email.ops_architect_signup.failed", code: error.name, message: error.message },
+      "architect signup ops email failed",
+    );
+    return fail("external_error", "Couldn't send ops email.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.ops_architect_signup.sent", resendId: data.id },
+    "architect signup ops email sent",
   );
   return ok({ id: data.id });
 }
