@@ -20,6 +20,17 @@ export interface Association {
   src: string;
   width: number;
   height: number;
+  /**
+   * Optical scale against the surface's base height, for a mark whose
+   * shape breaks the equal-height rule.
+   *
+   * Equal heights only balance marks of similar density. A stacked
+   * lockup spends the same height on three lines of type that a
+   * single-line mark spends on one, so matching it to the badge left
+   * its wordmark at a 5.9px cap where the previous mark read at 10.1px.
+   * Scaling it back to a legible cap is what "same weight" meant.
+   */
+  scale?: number;
 }
 
 export const ASSOCIATIONS: Association[] = [
@@ -28,12 +39,23 @@ export const ASSOCIATIONS: Association[] = [
     src: "/Homepage_logos/hia-badge.png",
     width: 414,
     height: 468,
+    // The badge is a solid shape filling its whole box; the lockup
+    // beside it reaches its height on a thin spire with air around it.
+    // Set to the same number they would look heavier, so this stops
+    // just short and lets the two read level.
+    scale: 1.1,
   },
   {
-    name: "Master Builders Australia",
-    src: "/Homepage_logos/mba-badge.png",
-    width: 600,
-    height: 157,
+    name: "Master Builders Victoria",
+    src: "/Homepage_logos/mbv-badge.png",
+    width: 795,
+    height: 400,
+    // Three stacked lines of type inside the mark, so its cap height is
+    // only 16.5% of its own. Matched to the badge it read at 5.9px,
+    // against the 10.1px the previous single-line mark managed. 1.25
+    // brings it to 7.4px, which is legible without the lockup standing
+    // taller than the badge beside it.
+    scale: 1.25,
   },
 ];
 
@@ -47,6 +69,7 @@ export function AssociationStrip({ className }: { className?: string }) {
     <div
       className={cn(
         "flex flex-wrap items-center justify-center lg:justify-start gap-x-3.5 gap-y-2 sm:gap-x-4",
+        "[--mark-h:26px] sm:[--mark-h:36px]",
         className,
       )}
     >
@@ -65,7 +88,8 @@ export function AssociationStrip({ className }: { className?: string }) {
             // The hero's marks answer "are these people real?" in the
             // first seconds, so they are never allowed to arrive late.
             priority
-            className="h-[26px] sm:h-[36px] w-auto shrink-0"
+            style={{ height: `calc(var(--mark-h) * ${a.scale ?? 1})` }}
+            className="w-auto shrink-0"
           />
         ))}
       </span>
