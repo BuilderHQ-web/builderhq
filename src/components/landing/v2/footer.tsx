@@ -90,7 +90,7 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
                 rather than the same height. The names read underneath,
                 where a second body would otherwise crowd the row. */}
             <div className="mt-1 flex flex-col items-center lg:items-start gap-2.5">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 [--mark-h:30px]">
                 {ASSOCIATIONS.map((a) => (
                   <Image
                     key={a.name}
@@ -98,14 +98,15 @@ export function Footer({ homeAnchors = false }: { homeAnchors?: boolean }) {
                     alt=""
                     width={a.width}
                     height={a.height}
-                    className="h-[30px] w-auto shrink-0"
+                    style={{ height: `calc(var(--mark-h) * ${a.scale ?? 1})` }}
+                    className="w-auto shrink-0"
                   />
                 ))}
               </div>
               <span className="text-[12px] leading-[1.45] text-text-dim text-center lg:text-left">
                 In association with the Housing Industry Association
                 <br />
-                and Master Builders Australia
+                and Master Builders Victoria
               </span>
             </div>
           </div>
