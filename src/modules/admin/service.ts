@@ -43,6 +43,7 @@ import {
   listRecentAdminActions,
   type AdminActionRow,
 } from "@/modules/audit";
+import { sendBuilderApprovedEmail } from "@/modules/email";
 
 // ── public types ────────────────────────────────────────────────────────
 
@@ -606,6 +607,45 @@ export async function approveBuilder(
     reason: reason ?? null,
     meta: { previousStatus: before[0]?.status ?? null },
   });
+
+  // The welcome, but only for a builder arriving for the FIRST time.
+  // `approveBuilder` also serves reinstatement: a suspended builder
+  // being restored would otherwise be told "Welcome to BuilderHQ" and
+  // introduced to a platform they have been on for months.
+  const prior = before[0]?.status ?? null;
+  const isFirstApproval = prior === "pending_review" || prior === "incomplete";
+  if (isFirstApproval) {
+    // Fire-and-forget: an approval must never fail because Resend is
+    // slow or down. Failure is logged inside the sender.
+    void (async () => {
+      try {
+        const [u] = await db
+          .select({ email: users.email, firstName: users.firstName, name: users.name })
+          .from(users)
+          .where(eq(users.id, builderId))
+          .limit(1);
+        const [p] = await db
+          .select({ companyName: builderProfiles.companyName })
+          .from(builderProfiles)
+          .where(eq(builderProfiles.userId, builderId))
+          .limit(1);
+        if (u?.email) {
+          await sendBuilderApprovedEmail({
+            to: u.email,
+            firstName: u.firstName ?? u.name?.split(" ")[0] ?? null,
+            companyName: p?.companyName ?? null,
+          });
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.error(
+          { event: "email.builder_approved.threw", builderId, msg },
+          "builder approved email threw, continuing",
+        );
+      }
+    })();
+  }
+
   return result;
 }
 

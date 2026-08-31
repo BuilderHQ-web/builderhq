@@ -28,6 +28,7 @@ export {
   sendOwnerSignupOpsEmail,
   sendBuilderSignupOpsEmail,
   sendArchitectSignupOpsEmail,
+  sendBuilderApprovedEmail,
   sendProjectPublishedOwnerEmail,
   sendProjectPublishedBuilderEmail,
   sendProjectPublishedOpsEmail,

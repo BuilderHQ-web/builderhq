@@ -62,6 +62,7 @@ import { ScopeRunOpsEmail } from "@/emails/ScopeRunOpsEmail";
 import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ArchitectSignupOpsEmail } from "@/emails/ArchitectSignupOpsEmail";
+import { BuilderApprovedEmail } from "@/emails/BuilderApprovedEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
 import { ProjectPublishedBuilderEmail } from "@/emails/ProjectPublishedBuilderEmail";
 import { ProjectPublishedOpsEmail } from "@/emails/ProjectPublishedOpsEmail";
@@ -1680,6 +1681,67 @@ export async function sendOwnerSignupOpsEmail(
   logger.info(
     { event: "email.ops_owner_signup.sent", resendId: data.id },
     "owner signup ops email sent",
+  );
+  return ok({ id: data.id });
+}
+
+interface SendBuilderApprovedEmailInput {
+  to: string;
+  firstName: string | null;
+  companyName: string | null;
+}
+
+/**
+ * The builder's welcome, sent the moment their account is approved.
+ *
+ * Every link is absolute and built here rather than in the template, so
+ * the component stays pure and a preview render cannot accidentally
+ * point a reader at localhost.
+ */
+export async function sendBuilderApprovedEmail(
+  input: SendBuilderApprovedEmailInput,
+): Promise<Result<{ id: string }>> {
+  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  const props = {
+    firstName: input.firstName,
+    companyName: input.companyName,
+    dashboardUrl: `${base}/builder`,
+    demoUrl: `${base}/demo/builder`,
+    networkUrl: `${base}/partners/builders`,
+    // The join form is a modal on the landing page, opened by this
+    // sentinel hash. The landing form honours it on load as well as on
+    // click, which is what makes it work from an email at all.
+    networkFormUrl: `${base}/#join-builder`,
+  };
+
+  const [html, text] = await Promise.all([
+    render(BuilderApprovedEmail(props)),
+    render(BuilderApprovedEmail(props), { plainText: true }),
+  ]);
+
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject: "Your BuilderHQ account is approved",
+    html,
+    text,
+    tags: [
+      { name: "category", value: "builder_lifecycle" },
+      { name: "variant", value: "approved" },
+    ],
+  });
+
+  if (error) {
+    logger.error(
+      { event: "email.builder_approved.failed", code: error.name, message: error.message },
+      "builder approved email failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info(
+    { event: "email.builder_approved.sent", resendId: data.id },
+    "builder approved email sent",
   );
   return ok({ id: data.id });
 }

@@ -143,6 +143,20 @@ export function PartnerForm() {
     return () => document.removeEventListener("click", onClick, true);
   }, [open]);
 
+  // A link from OUTSIDE the site — the builder approval email, a
+  // newsletter — arrives with the sentinel already in the URL and no
+  // click for the interceptor above to catch. Honour it on mount too,
+  // or every such link lands on the landing page and does nothing.
+  React.useEffect(() => {
+    // The URL IS the external system here, and it cannot be read during
+    // render: this component server-renders with no window, so a lazy
+    // initial state would disagree with the client and break hydration.
+    // After mount is the only correct moment, and it happens once.
+    const hit = SENTINELS[window.location.hash];
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (hit) open(hit.mode, hit.role);
+  }, [open]);
+
   // Esc to close + scroll lock while open.
   React.useEffect(() => {
     if (!mode) return;
