@@ -18,7 +18,10 @@ import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { normaliseAuPhone } from "@/lib/au-phone";
 import { users } from "@/modules/users/schema";
-import { sendOwnerSignupOpsEmail } from "@/modules/email";
+import {
+  sendOwnerSignupOpsEmail,
+  sendOwnerWelcomeEmail,
+} from "@/modules/email";
 
 export interface OwnerOnboardingState {
   ok?: true;
@@ -114,6 +117,13 @@ export async function ownerOnboardingAction(
         .limit(1);
       const profile = await getOwnerProfile(userId);
       if (u) {
+        // The owner's own welcome, and the ops notice. Sent together
+        // because they need the same lookup; awaited in sequence rather
+        // than raced so one failing cannot mask the other in the logs.
+        await sendOwnerWelcomeEmail({
+          to: u.email,
+          firstName: u.name?.split(" ")[0] ?? null,
+        });
         await sendOwnerSignupOpsEmail({
           ownerName: u.name,
           ownerEmail: u.email,

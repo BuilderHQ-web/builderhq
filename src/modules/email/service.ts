@@ -63,6 +63,8 @@ import { OwnerSignupOpsEmail } from "@/emails/OwnerSignupOpsEmail";
 import { BuilderSignupOpsEmail } from "@/emails/BuilderSignupOpsEmail";
 import { ArchitectSignupOpsEmail } from "@/emails/ArchitectSignupOpsEmail";
 import { BuilderApprovedEmail } from "@/emails/BuilderApprovedEmail";
+import { OwnerWelcomeEmail } from "@/emails/OwnerWelcomeEmail";
+import { ArchitectWelcomeEmail } from "@/emails/ArchitectWelcomeEmail";
 import { ProjectPublishedOwnerEmail } from "@/emails/ProjectPublishedOwnerEmail";
 import { ProjectPublishedBuilderEmail } from "@/emails/ProjectPublishedBuilderEmail";
 import { ProjectPublishedOpsEmail } from "@/emails/ProjectPublishedOpsEmail";
@@ -1743,6 +1745,91 @@ export async function sendBuilderApprovedEmail(
     { event: "email.builder_approved.sent", resendId: data.id },
     "builder approved email sent",
   );
+  return ok({ id: data.id });
+}
+
+/**
+ * The welcome each role gets on finishing onboarding. Links are built
+ * here rather than in the templates, so the components stay pure and a
+ * preview render can never point a reader at localhost.
+ */
+export async function sendOwnerWelcomeEmail(input: {
+  to: string;
+  firstName: string | null;
+}): Promise<Result<{ id: string }>> {
+  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  const props = {
+    firstName: input.firstName,
+    startProjectUrl: `${base}/owner/projects/new`,
+    demoUrl: `${base}/demo`,
+  };
+  const [html, text] = await Promise.all([
+    render(OwnerWelcomeEmail(props)),
+    render(OwnerWelcomeEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject: "Welcome to BuilderHQ",
+    html,
+    text,
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "variant", value: "owner_welcome" },
+    ],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.owner_welcome.failed", code: error.name, message: error.message },
+      "owner welcome email failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info({ event: "email.owner_welcome.sent", resendId: data.id }, "owner welcome sent");
+  return ok({ id: data.id });
+}
+
+export async function sendArchitectWelcomeEmail(input: {
+  to: string;
+  firstName: string | null;
+  practiceName: string | null;
+}): Promise<Result<{ id: string }>> {
+  const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
+  const props = {
+    firstName: input.firstName,
+    practiceName: input.practiceName,
+    startProjectUrl: `${base}/architect/projects/new`,
+    demoUrl: `${base}/demo/architect`,
+    networkUrl: `${base}/partners/architects`,
+    // Sentinel hash: the landing form honours it on load as well as on
+    // click, which is what lets an email link open it at all.
+    networkFormUrl: `${base}/#join-architect`,
+  };
+  const [html, text] = await Promise.all([
+    render(ArchitectWelcomeEmail(props)),
+    render(ArchitectWelcomeEmail(props), { plainText: true }),
+  ]);
+  const { data, error } = await sendViaResend({
+    from: env.EMAIL_FROM,
+    to: input.to,
+    subject: "Welcome to BuilderHQ",
+    html,
+    text,
+    tags: [
+      { name: "category", value: "lifecycle" },
+      { name: "variant", value: "architect_welcome" },
+    ],
+  });
+  if (error) {
+    logger.error(
+      { event: "email.architect_welcome.failed", code: error.name, message: error.message },
+      "architect welcome email failed",
+    );
+    return fail("external_error", error.message ?? "Email send failed.");
+  }
+  if (!data) return fail("external_error", "Email provider returned no message id");
+  logger.info({ event: "email.architect_welcome.sent", resendId: data.id }, "architect welcome sent");
   return ok({ id: data.id });
 }
 

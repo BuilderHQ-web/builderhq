@@ -14,7 +14,10 @@ import { eq } from "drizzle-orm";
 import { auth, unstable_update } from "@/modules/auth";
 import { db } from "@/lib/db";
 import { users } from "@/modules/users";
-import { sendArchitectSignupOpsEmail } from "@/modules/email";
+import {
+  sendArchitectSignupOpsEmail,
+  sendArchitectWelcomeEmail,
+} from "@/modules/email";
 import { seedSampleRound } from "@/modules/sample";
 import {
   completeArchitectOnboarding,
@@ -104,6 +107,11 @@ export async function architectOnboardingAction(
         .limit(1);
       const profile = await getArchitectProfile(userId);
       if (u) {
+        await sendArchitectWelcomeEmail({
+          to: u.email,
+          firstName: u.name?.split(" ")[0] ?? null,
+          practiceName: profile?.practiceName ?? null,
+        });
         await sendArchitectSignupOpsEmail({
           architectName: u.name,
           architectEmail: u.email,
