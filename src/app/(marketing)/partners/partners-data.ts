@@ -2928,7 +2928,11 @@ export const PARTNERS: Partner[] = [
     stats: [
       { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
       { label: "Projects", value: "12", sub: "in the portfolio" },
-      { label: "Typical build value", value: "$2m-$15m" },
+      {
+        label: "Typical build value",
+        value: "$2m+",
+        sub: "homes, townhouses and SDA",
+      },
     ],
     awards: [
       {
