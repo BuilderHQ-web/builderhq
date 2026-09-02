@@ -154,6 +154,12 @@ export interface Partner {
   /** Direct booking link (e.g. Calendly) — renders as a calendar icon in
    *  the profile's link cluster, beside the socials. */
   booking?: string;
+  /** Multiplier on the logo's size caps inside the avatar tile. A compact
+   *  square glyph reads small next to the wide wordmarks most partners
+   *  have, because it is limited by height where they are limited by
+   *  width. This lets one mark ask for more room without resizing every
+   *  other partner's tile. Defaults to 1. */
+  logoScale?: number;
   /** Where the selected-work images link to (e.g. the practice's gallery). */
   galleryUrl?: string;
   /** Architects: selected work, text-first (images optional). */
@@ -2907,6 +2913,7 @@ export const PARTNERS: Partner[] = [
     name: "Nimbus Workshop",
     monogram: "NW",
     logo: "/partners/nimbus-workshop/logo.png",
+    logoScale: 1.2,
     principal: "Charles Nimbus",
     suburb: "Melbourne",
     state: "VIC",
@@ -2922,11 +2929,6 @@ export const PARTNERS: Partner[] = [
     stats: [
       { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
       { label: "Projects published", value: "12" },
-      {
-        label: "Architectural director",
-        value: "10+ yrs",
-        sub: "in practice",
-      },
     ],
     awards: [
       {
@@ -2934,11 +2936,10 @@ export const PARTNERS: Partner[] = [
         sub: "International Architecture and Design Awards · 2026 · Trafalgar",
       },
     ],
-    why: "Most homes are drawn by one practice and fitted out by another, and the gap between them is where a design loses its edges. Nimbus Workshop keeps all of it in one studio, so what is planned and what is finally installed answer to the same people.\n\nThe studio is young. The people behind it are not, and its first published house has already been recognised internationally.\n\nOn tendering and builder selection they will go as far as a client wants, from handing over a documented set to running the process alongside you.",
+    why: "Nimbus Workshop approaches architecture and interiors as one connected process. This gives clients greater consistency from the initial design direction through to the finer details of the finished home, with each decision considered as part of the overall experience rather than in isolation.\n\nTheir involvement can begin well before detailed design, helping clients understand a site’s opportunities, planning considerations and potential project direction before committing further. As the project develops, they coordinate design, consultants, approvals and cost considerations to give clients greater clarity through each stage.\n\nFor clients looking for a thoughtful, design-led home with strong attention to detail and a clear process from early planning through to delivery, Nimbus Workshop offers a well-rounded architectural approach.",
     about:
-      "Nimbus Workshop is a Melbourne architecture and interior design studio. It designs single homes, dual occupancy sites and townhouses, along with Specialist Disability Accommodation and a smaller amount of commercial fitout. The studio covers metropolitan Melbourne and works mostly through the eastern suburbs. Recent projects are Trafalgar and Atelier, both at Mont Albert, and Liston at Glen Iris, all completed in 2024.",
+      "Nimbus Workshop is a Melbourne-based architecture and interior design practice creating considered residential spaces with a strong connection to site, landscape and everyday living. Their work brings architecture and interiors together as one cohesive design process, with careful attention to natural light, proportion, materiality and long-term performance. From early site investigation and concept design through approvals, documentation and interior detailing, Nimbus takes a collaborative approach focused on creating homes that are functional, enduring and distinctly personal.",
     facts: {
-      experience: "10+ yrs",
       basedIn: "Melbourne, VIC",
       serves: "Metropolitan Melbourne",
       focus: "Homes, townhouses and interiors",
