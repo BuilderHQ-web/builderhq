@@ -2910,8 +2910,7 @@ export const PARTNERS: Partner[] = [
     principal: "Miguel and Kristina Raveche",
     suburb: "Melbourne",
     state: "VIC",
-    tagline:
-      "A Melbourne firm founded by a builder and an interior designer, so how a home is built and how it is finished are decided in the same room.",
+    tagline: "A Melbourne firm founded by a builder and an interior designer.",
     disciplines: [
       "Custom homes",
       "Renovations and extensions",
@@ -2932,9 +2931,9 @@ export const PARTNERS: Partner[] = [
         sub: "registered builder since 2019",
       },
     ],
-    why: "Their strongest work is heritage. On both Prahran House and Windsor House they took the back off a period home, restored what was left, and built a contemporary addition behind it, to Odyssey Architecture’s drawings.\n\nThat is the harder kind of renovation. Floor levels, window heights and every junction between old and new have to be settled before anyone lifts a tool, and the restoration has to hold while the new work goes in around it. Windsor House still ran from building permit to finished home in under six months. For an owner with a period house and a modern brief, that is the record worth having on site.",
+    why: "Having the builder and the interior designer inside the same firm changes what an owner gets. On most jobs those two roles sit in different businesses, and the detail between them is what gets lost. Here they are one team, so what was intended and what gets built are held by the same people.\n\nThe approach is hands-on. Design intent, technical detail and site coordination are given the same weight, from early planning through to completion. The standard is work that still looks right in ten years, not work that photographs well at handover. On a heritage restoration or a contemporary addition, their job is to manage the detail so the design carries through to the finished home.\n\nThere are two ways to begin. They will quote and build from working drawings your own designer has prepared, or their in-house design team will take you from concept through selections to the build. Either way the first thing back is an estimate and a timeframe, so both sides can judge the fit before anyone commits. From there every project runs through the same six stages, set out below, so an owner always knows which stage they are in and what happens next.",
     about:
-      "Founded in 2016, The Builder’s Project works across custom homes, renovations, extensions, additions and development projects in Melbourne. Miguel Raveche is director and builder. Kristina Raveche is creative director, leading interiors and styling. A construction manager, a lead carpenter and an operations manager complete the team. Every job runs through the same six stages, from the first consultation and early coordination, through pricing, planning and pre-construction, to construction and handover. Recent work includes Windsor House and Prahran House, both heritage renewals with Odyssey Architecture, and Russel House, a new build with The Designers Studio.",
+      "The Builder’s Project has been building in Melbourne since 2016. The work runs across custom homes, renovations, extensions, additions and development projects, with heritage restoration a particular strength. Miguel Raveche is director and builder. Kristina Raveche is creative director, leading interiors and styling. A construction manager, a lead carpenter and an operations manager complete the team. Recent projects include Windsor House and Prahran House, both heritage renewals, and Russel House, a new build. Windsor House ran from building permit to finished home in under six months.",
     facts: {
       established: "2016",
       experience: "17 yrs",
@@ -2945,6 +2944,15 @@ export const PARTNERS: Partner[] = [
     website: "https://www.thebuildersproject.melbourne",
     instagram: "https://www.instagram.com/thebuildersproject/",
     facebook: "https://www.facebook.com/thebuildersproject/",
+    servicesLabel: "From first call to handover",
+    services: [
+      "Initial consultation · understanding the project, the site and the design intent",
+      "Early coordination · reviewing plans, scope and buildability with your designer, or briefing and drawing them in-house",
+      "Pricing and planning · detailed costing, timelines and the construction approach settled",
+      "Pre-construction · permits, documentation and site preparation finalised",
+      "Construction · careful execution, with communication kept up on site",
+      "Completion and handover · final detailing, quality checks and a considered handover",
+    ],
     galleryUrl: "https://www.thebuildersproject.melbourne/projects",
     work: [
       {
