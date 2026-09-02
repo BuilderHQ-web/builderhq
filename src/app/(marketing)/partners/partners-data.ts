@@ -2904,14 +2904,14 @@ export const PARTNERS: Partner[] = [
     kind: "builder",
     builderProfileSlug: "the-builders-project-61b9f3",
     roleLabel: "Design-led builder",
-    name: "The Builders Project",
+    name: "The Builder’s Project",
     monogram: "TB",
     logo: "/partners/the-builders-project/logo.png",
     principal: "Miguel and Kristina Raveche",
     suburb: "Melbourne",
     state: "VIC",
     tagline:
-      "A husband-and-wife builder in Melbourne. Miguel builds, Kristina designs, and most of their work is a period home restored at the front and rebuilt at the back.",
+      "A Melbourne firm founded by a builder and an interior designer, so how a home is built and how it is finished are decided in the same room.",
     disciplines: [
       "Custom homes",
       "Renovations and extensions",
@@ -2922,9 +2922,9 @@ export const PARTNERS: Partner[] = [
     stats: [
       { label: "Google rating", value: "4.9", star: true, sub: "17 reviews" },
       {
-        label: "Homes built or renovated",
+        label: "Properties built or renovated",
         value: "30+",
-        sub: "by Miguel and Kristina together",
+        sub: "across the two directors",
       },
       {
         label: "On the tools since",
@@ -2932,9 +2932,9 @@ export const PARTNERS: Partner[] = [
         sub: "registered builder since 2019",
       },
     ],
-    why: "Miguel Raveche has been on the tools since 2009 and a registered builder since 2019. Kristina Raveche is an interior designer and stylist with a decade of hands-on experience. They are married, they run the company together, and between them they have built or renovated more than thirty properties. It is an unusual pairing, and a useful one. The person pricing the job and the person choosing the finishes sit at the same table from the first meeting.\n\nIt shows most in their heritage work. On both Prahran House and Windsor House they took the back off a period home, restored what was left, and built a contemporary addition behind it. Both were built to Odyssey Architecture’s drawings. That is the harder kind of renovation. Floor levels, window heights and every junction between old and new have to be settled before anyone lifts a tool. Windsor House still went from building permit to finished home in under six months. For an owner with a period house and a modern brief, that is the experience you want on site.",
+    why: "Their strongest work is heritage. On both Prahran House and Windsor House they took the back off a period home, restored what was left, and built a contemporary addition behind it, to Odyssey Architecture’s drawings.\n\nThat is the harder kind of renovation. Floor levels, window heights and every junction between old and new have to be settled before anyone lifts a tool, and the restoration has to hold while the new work goes in around it. Windsor House still ran from building permit to finished home in under six months. For an owner with a period house and a modern brief, that is the record worth having on site.",
     about:
-      "The Builders Project is a Melbourne building company working across custom homes, renovations, extensions, additions and development projects. Miguel and Kristina Raveche founded it in 2016. They started from a simple view: a good home begins with thoughtful design and careful craftsmanship, and the people building it should understand the people who will live in it. The team is five: Miguel as director and builder, Kristina as creative director, a construction manager, a lead carpenter and an operations manager. Every job runs through the same six stages, from the first consultation and early coordination, through pricing, planning and pre-construction, to construction and handover. Recent work includes Windsor House and Prahran House, both heritage renewals with Odyssey Architecture, and Russel House, a new build with The Designers Studio.",
+      "Founded in 2016, The Builder’s Project works across custom homes, renovations, extensions, additions and development projects in Melbourne. Miguel Raveche is director and builder. Kristina Raveche is creative director, leading interiors and styling. A construction manager, a lead carpenter and an operations manager complete the team. Every job runs through the same six stages, from the first consultation and early coordination, through pricing, planning and pre-construction, to construction and handover. Recent work includes Windsor House and Prahran House, both heritage renewals with Odyssey Architecture, and Russel House, a new build with The Designers Studio.",
     facts: {
       established: "2016",
       experience: "17 yrs",
