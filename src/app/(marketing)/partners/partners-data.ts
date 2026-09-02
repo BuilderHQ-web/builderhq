@@ -2914,7 +2914,6 @@ export const PARTNERS: Partner[] = [
     monogram: "NW",
     logo: "/partners/nimbus-workshop/logo.png",
     logoScale: 1.2,
-    principal: "Charles Nimbus",
     suburb: "Melbourne",
     state: "VIC",
     tagline:
