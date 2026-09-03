@@ -2676,8 +2676,14 @@ interface SendScopeReadyEmailInput {
   to: string;
   runnerFirstName: string | null;
   projectTitle: string;
-  evidencedCount: number;
-  gapCount: number;
+  /** Every line a builder prices: documented plus gap. */
+  scopeItems: number;
+  /** Gaps the builders carry and price without the runner. */
+  builderCarried: number;
+  /** Gaps genuinely waiting on the runner. */
+  decisions: number;
+  /** Of those decisions, the ones that are an allowance to set. */
+  allowances: number;
   reviewUrl: string;
 }
 
@@ -2689,8 +2695,10 @@ export async function sendScopeReadyEmail(
   const props = {
     runnerFirstName: input.runnerFirstName,
     projectTitle: input.projectTitle,
-    evidencedCount: input.evidencedCount,
-    gapCount: input.gapCount,
+    scopeItems: input.scopeItems,
+    builderCarried: input.builderCarried,
+    decisions: input.decisions,
+    allowances: input.allowances,
     reviewUrl: input.reviewUrl,
   };
   const [html, text] = await Promise.all([

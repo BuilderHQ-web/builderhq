@@ -55,6 +55,7 @@ import {
   packReadiness,
   type NamedMissingRef,
   type PackReadiness,
+  scopeReadyTally,
 } from "./analysis";
 import { users } from "@/modules/users";
 import { unlocks } from "@/modules/unlocks";
@@ -3058,13 +3059,33 @@ async function dispatchScopeReady(runId: string): Promise<void> {
       .limit(1);
     if (!row) return;
 
-    const [tally] = await db
+    // Read the lines WITH their resolutions. autoResolveBuilderWork has
+    // already run by the time this dispatches, so a gap carrying any
+    // resolution has been answered and is not a decision for the runner.
+    const lines = await db
       .select({
-        evidenced: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'evidenced' and ${scopeRunItems.opsStatus} <> 'removed')`.mapWith(Number),
-        gaps: sql<number>`count(*) filter (where ${scopeRunItems.status} = 'gap' and ${scopeRunItems.opsStatus} <> 'removed')`.mapWith(Number),
+        itemId: scopeRunItems.itemId,
+        status: scopeRunItems.status,
+        opsStatus: scopeRunItems.opsStatus,
+        resolution: scopeGapResolutions.resolution,
       })
       .from(scopeRunItems)
+      .leftJoin(
+        scopeGapResolutions,
+        and(
+          eq(scopeGapResolutions.runId, scopeRunItems.runId),
+          eq(scopeGapResolutions.itemId, scopeRunItems.itemId),
+        ),
+      )
       .where(eq(scopeRunItems.runId, runId));
+    const tally = scopeReadyTally(
+      lines.map((l) => ({
+        itemId: l.itemId,
+        status: l.status,
+        opsStatus: l.opsStatus,
+        resolved: l.resolution !== null,
+      })),
+    );
 
     const base = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, "");
     const reviewUrl = `${base}${row.runnerRole === "architect" ? "/architect" : "/owner"}/projects/${row.projectSlug}/scope`;
@@ -3074,7 +3095,10 @@ async function dispatchScopeReady(runId: string): Promise<void> {
         userId: row.runnerId,
         kind: "scope_ready",
         title: `Your tender pack for ${row.projectTitle} is ready`,
-        body: `${tally?.evidenced ?? 0} items documented · ${tally?.gaps ?? 0} need your answer.`,
+        body:
+          tally.decisions > 0
+            ? `${tally.scopeItems} scope items · ${tally.decisions} need your answer.`
+            : `${tally.scopeItems} scope items · nothing waiting on you.`,
         actionUrl: reviewUrl,
         projectId: row.projectId,
       }),
@@ -3082,8 +3106,10 @@ async function dispatchScopeReady(runId: string): Promise<void> {
         to: row.runnerEmail,
         runnerFirstName: row.runnerFirstName,
         projectTitle: row.projectTitle,
-        evidencedCount: tally?.evidenced ?? 0,
-        gapCount: tally?.gaps ?? 0,
+        scopeItems: tally.scopeItems,
+        builderCarried: tally.builderCarried,
+        decisions: tally.decisions,
+        allowances: tally.allowances,
         reviewUrl,
       }),
     ]);

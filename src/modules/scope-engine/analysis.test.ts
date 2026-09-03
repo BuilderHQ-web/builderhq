@@ -25,6 +25,7 @@ import {
   namedMissingDocuments,
   captureHygiene,
   packReadiness,
+  scopeReadyTally,
   SOFT_CITATION_PENALTY,
 } from "./analysis";
 import { itemsFor } from "@/modules/scope";
@@ -1326,5 +1327,68 @@ describe("packReadiness and the structural gate", () => {
     });
     expect(r.factors.join(" ")).not.toContain("No structural engineering");
     expect(r.verdict).toBe("fixed_price");
+  });
+});
+
+describe("scopeReadyTally", () => {
+  const line = (
+    itemId: string,
+    status: string,
+    resolved = false,
+    opsStatus = "confirmed",
+  ) => ({ itemId, status, opsStatus, resolved });
+
+  test("a resolved gap is not a decision for the runner", () => {
+    const t = scopeReadyTally([
+      line("roofing.metal-roof", "evidenced"),
+      line("preliminaries.scaffolding", "gap", true),
+      line("approvals.soil-geotech", "gap", false),
+    ]);
+    expect(t.scopeItems).toBe(3);
+    expect(t.documented).toBe(1);
+    expect(t.builderCarried).toBe(1);
+    expect(t.decisions).toBe(1);
+  });
+
+  test("removed lines and not_expected lines are not scope", () => {
+    const t = scopeReadyTally([
+      line("roofing.metal-roof", "evidenced"),
+      line("landscaping.pool", "not_expected"),
+      line("windows.flyscreens", "gap", false, "removed"),
+    ]);
+    expect(t.scopeItems).toBe(1);
+    expect(t.decisions).toBe(0);
+  });
+
+  test("counts the open allowances inside the decisions", () => {
+    const t = scopeReadyTally([
+      line("appliances.cooktop", "gap", false),
+      line("approvals.soil-geotech", "gap", false),
+      line("preliminaries.scaffolding", "gap", true),
+    ]);
+    expect(t.decisions).toBe(2);
+    expect(t.allowances).toBe(1);
+    expect(t.allowances).toBeLessThanOrEqual(t.decisions);
+  });
+
+  test("a pack with every gap resolved leaves nothing for the runner", () => {
+    const t = scopeReadyTally([
+      line("roofing.metal-roof", "evidenced"),
+      line("preliminaries.scaffolding", "gap", true),
+    ]);
+    expect(t.decisions).toBe(0);
+    expect(t.allowances).toBe(0);
+    expect(t.builderCarried).toBe(1);
+  });
+
+  test("the parts always add up to the scope", () => {
+    const t = scopeReadyTally([
+      line("roofing.metal-roof", "evidenced"),
+      line("roofing.downpipes", "evidenced"),
+      line("preliminaries.scaffolding", "gap", true),
+      line("appliances.cooktop", "gap", false),
+      line("landscaping.pool", "not_expected"),
+    ]);
+    expect(t.documented + t.builderCarried + t.decisions).toBe(t.scopeItems);
   });
 });

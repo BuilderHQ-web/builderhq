@@ -31,6 +31,7 @@ import {
   SCOPE_ITEMS,
   getScopeItem,
   itemsFor,
+  ownerAllowanceEligible,
   structuralExpected,
   type ScopeProjectType,
 } from "@/modules/scope";
@@ -1198,4 +1199,58 @@ export function dedupeRegister<
     }
   }
   return { keep, duplicates };
+}
+
+/* ── what the runner is actually asked, after approval ───────────────── */
+
+export interface ScopeReadyTally {
+  /** Every line a builder prices: documented plus gap. */
+  scopeItems: number;
+  /** Established by the documents themselves. */
+  documented: number;
+  /** Gaps the builders carry and price without the runner. */
+  builderCarried: number;
+  /** Gaps genuinely waiting on the runner. */
+  decisions: number;
+  /** Of those decisions, the ones that are an allowance to set. */
+  allowances: number;
+}
+
+/**
+ * The counts the scope-ready letter reports.
+ *
+ * WHY THIS IS NOT JUST "count the gaps". Approval resolves every gap
+ * that is the builders' ordinary work to builder-priced before the
+ * letter goes out, so the raw gap count is not the number of things
+ * the runner has to do. The letter used to print it anyway and told a
+ * client that 105 items needed their answer when 21 did. A number that
+ * large reads as a defect report on the architect, which is the one
+ * thing a gap is not.
+ *
+ * A gap with a resolution of any kind has been answered, by the
+ * automatic rule at approval or by an answer carried from the previous
+ * pack. Only the rest are decisions.
+ */
+export function scopeReadyTally(
+  rows: Array<{
+    itemId: string;
+    status: string;
+    opsStatus: string;
+    resolved: boolean;
+  }>,
+): ScopeReadyTally {
+  const live = rows.filter(
+    (r) =>
+      r.opsStatus !== "removed" &&
+      (r.status === "evidenced" || r.status === "gap"),
+  );
+  const gaps = live.filter((r) => r.status === "gap");
+  const open = gaps.filter((r) => !r.resolved);
+  return {
+    scopeItems: live.length,
+    documented: live.filter((r) => r.status === "evidenced").length,
+    builderCarried: gaps.length - open.length,
+    decisions: open.length,
+    allowances: open.filter((r) => ownerAllowanceEligible(r.itemId)).length,
+  };
 }
