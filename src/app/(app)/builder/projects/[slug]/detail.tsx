@@ -194,6 +194,7 @@ export function ProjectDetail({
   initialConversations,
   pack = null,
   conflicts = [],
+  conflictCount = 0,
   latestAddendum = null,
   clientBrief = [],
   advisories = [],
@@ -218,7 +219,13 @@ export function ProjectDetail({
   /** Unresolved points where the round's documents disagree. The
    *  owner reads the same notes; a builder prices with them in view
    *  rather than discovering them on site. */
+  /** Summaries. Sent ONLY to an unlocked viewer: they are the pricing
+   *  intelligence the spot pays for, so they must not reach the page
+   *  source before that. */
   conflicts?: Array<{ id: string; summary: string; severity: string }>;
+  /** How many there are. Safe everywhere, and it is the reason to take
+   *  the spot, so it is shown while the summaries are not. */
+  conflictCount?: number;
   latestAddendum?: { number: number; issuedAtISO: string } | null;
   /** The client's brief, safe for every viewer. */
   clientBrief?: Array<{ k: string; v: string }>;
@@ -704,27 +711,33 @@ export function ProjectDetail({
                   />
                 ) : null}
 
-                {conflicts.length > 0 ? (
+                {conflictCount > 0 ? (
                   <div className="mt-4">
                     <p className="text-[10px] tracking-[0.16em] uppercase text-[#8a6414] font-ui font-semibold">
                       Where the documents disagree
                     </p>
-                    <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[68ch]">
-                      The set gives different answers on{" "}
-                      {conflicts.length === 1 ? "one point" : "these points"}.
-                      The client sees the same notes. Price with them in
-                      view, and raise anything that changes your number.
-                    </p>
-                    <ul className="mt-2.5 flex flex-col gap-2">
-                      {conflicts.map((c) => (
-                        <li
-                          key={c.id}
-                          className="rounded-md border border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.06)] px-3 py-2.5 text-[12px] leading-[1.6] text-text-muted"
-                        >
-                          {c.summary}
-                        </li>
-                      ))}
-                    </ul>
+                    {unlocked ? (
+                      <>
+                        <p className="mt-1 text-[12px] leading-[1.6] text-text-muted max-w-[68ch]">
+                          The set gives different answers on{" "}
+                          {conflictCount === 1 ? "one point" : "these points"}.
+                          The client sees the same notes. Price with them in
+                          view, and raise anything that changes your number.
+                        </p>
+                        <ul className="mt-2.5 flex flex-col gap-2">
+                          {conflicts.map((c) => (
+                            <li
+                              key={c.id}
+                              className="rounded-md border border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.06)] px-3 py-2.5 text-[12px] leading-[1.6] text-text-muted"
+                            >
+                              {c.summary}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <LockedConflicts count={conflictCount} />
+                    )}
                   </div>
                 ) : null}
 
@@ -1979,6 +1992,49 @@ function DocumentationStagePanel({
           {stage.opportunity}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/* ── the conflicts, before the spot is taken ─────────────────────────── */
+
+/**
+ * The heading and nothing else.
+ *
+ * WHY IT IS NOT A CSS BLUR OVER THE REAL TEXT. A blurred paragraph is
+ * still in the page source, and these summaries are the pricing
+ * intelligence the spot pays for: where the drawings contradict each
+ * other, which is the most valuable thing the read produces. So the
+ * summaries are never sent to an un-unlocked viewer, and what blurs
+ * here is empty scaffolding with no text in it at all.
+ *
+ * The COUNT is sent, because it is not the content and it is the
+ * honest reason to take a spot.
+ */
+function LockedConflicts({ count }: { count: number }) {
+  return (
+    <div className="relative mt-1">
+      <div
+        aria-hidden
+        className="blur-[6px] select-none pointer-events-none flex flex-col gap-2 pt-1"
+      >
+        {Array.from({ length: Math.min(Math.max(count, 1), 3) }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-md border border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.06)] px-3 py-2.5 flex flex-col gap-1.5"
+          >
+            <span className="block h-[7px] w-full rounded-full bg-[rgba(217,164,65,0.5)]" />
+            <span className="block h-[7px] w-[82%] rounded-full bg-[rgba(217,164,65,0.4)]" />
+            <span className="block h-[7px] w-[54%] rounded-full bg-[rgba(217,164,65,0.3)]" />
+          </div>
+        ))}
+      </div>
+      <BlurOverlay
+        icon={<Lock className="size-3.5" />}
+        title={`${count} point${count === 1 ? "" : "s"} where the documents disagree`}
+        sub="Opens with your spot"
+        compact
+      />
     </div>
   );
 }

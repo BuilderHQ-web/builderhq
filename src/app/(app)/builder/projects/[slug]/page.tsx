@@ -151,7 +151,8 @@ export default async function BuilderProjectPage({
   return (
     <ProjectDetail
       preview={preview}
-      conflicts={conflicts}
+      conflicts={unlocked ? conflicts : []}
+      conflictCount={conflicts.length}
       full={fullR?.ok ? fullR.value : null}
       unlocked={unlocked}
       saved={saved}
