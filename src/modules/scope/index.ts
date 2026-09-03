@@ -159,3 +159,12 @@ export {
   standardDocumentName,
   resolveRegisterNames,
 } from "./doc-names";
+
+export {
+  structuralExpected,
+  pricingPackagesFor,
+  documentationStage,
+  type DocumentationStage,
+  type PricingPackage,
+  type StageRead,
+} from "./documentation-stage";

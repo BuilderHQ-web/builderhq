@@ -197,6 +197,7 @@ export function ProjectDetail({
   latestAddendum = null,
   clientBrief = [],
   advisories = [],
+  docStage = null,
   schedule = null,
   invitedBy = null,
 }: {
@@ -221,6 +222,9 @@ export function ProjectDetail({
   latestAddendum?: { number: number; issuedAtISO: string } | null;
   /** The client's brief, safe for every viewer. */
   clientBrief?: Array<{ k: string; v: string }>;
+  /** What stage the documents are at, derived from the register on
+   *  every read. Null when nothing has been analysed. */
+  docStage?: DocStage | null;
   /** Post-unlock only — the server withholds these until then. */
   advisories?: PackAdvisory[];
   schedule?: TenderSchedule | null;
@@ -692,6 +696,13 @@ export function ProjectDetail({
                 </p>
 
                 <ScopeStatsBand pack={pack} unlocked={unlocked} />
+
+                {docStage ? (
+                  <DocumentationStagePanel
+                    stage={docStage}
+                    unlocked={unlocked}
+                  />
+                ) : null}
 
                 {conflicts.length > 0 ? (
                   <div className="mt-4">
@@ -1896,4 +1907,78 @@ function prettyBytes(n: number): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+/* ── what stage the documents are at ────────────────────────────────── */
+
+export interface DocStage {
+  stage: "planning" | "partial" | "documented";
+  label: string;
+  headline: string;
+  detail: string;
+  opportunity: string;
+  awaiting: string[];
+}
+
+/**
+ * The honest position on the documents, before a builder spends a
+ * spot. It is derived from the register, so it needs nobody to
+ * maintain it and it disappears on its own when the packages land.
+ *
+ * The tone is deliberate. A builder who unlocks and finds a planning
+ * set has been misled by omission, and that costs a relationship worth
+ * far more than one spot. Told first, they can choose, and the ones
+ * who choose it are the ones who want to be in early.
+ */
+function DocumentationStagePanel({
+  stage,
+  unlocked,
+}: {
+  stage: DocStage;
+  unlocked: boolean;
+}) {
+  const done = stage.stage === "documented";
+  const tone = done
+    ? {
+        ring: "border-[rgba(10,125,115,0.28)] bg-[rgba(10,125,115,0.05)]",
+        head: "text-[#0a7d73]",
+      }
+    : {
+        ring: "border-[rgba(217,164,65,0.35)] bg-[rgba(217,164,65,0.05)]",
+        head: "text-[#8a6414]",
+      };
+  return (
+    <div className={`mt-4 rounded-lg border ${tone.ring} px-4 py-3.5`}>
+      <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+        <span
+          className={`text-[10px] tracking-[0.16em] uppercase font-ui font-semibold ${tone.head}`}
+        >
+          {stage.label}
+        </span>
+        <span className="text-[13px] leading-[1.6] text-text-default font-medium">
+          {stage.headline}
+        </span>
+      </div>
+      <p className="mt-1.5 text-[12.5px] leading-[1.65] text-text-muted max-w-[70ch]">
+        {stage.detail}
+      </p>
+      {stage.awaiting.length > 0 ? (
+        <ul className="mt-2.5 flex flex-wrap gap-1.5">
+          {stage.awaiting.map((a) => (
+            <li
+              key={a}
+              className="rounded-full border border-border-subtle bg-surface-muted/60 px-2.5 py-[3px] text-[11px] text-text-muted"
+            >
+              Awaiting {a}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {!unlocked && stage.opportunity ? (
+        <p className="mt-3 border-t border-border-subtle/60 pt-2.5 text-[12px] leading-[1.65] text-text-muted max-w-[70ch]">
+          {stage.opportunity}
+        </p>
+      ) : null}
+    </div>
+  );
 }

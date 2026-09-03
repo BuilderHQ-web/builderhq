@@ -34,6 +34,8 @@ import {
   coveredSelectionPackages,
   selectionPackageKey,
   resolveRegisterNames,
+  documentationStage,
+  type StageRead,
 } from "@/modules/scope";
 import { isExtractionEnabled } from "@/modules/extraction/client";
 import { SCOPE_CONFIDENCE_FLOOR } from "./floor";
@@ -2426,12 +2428,29 @@ export async function packPhaseForProjects(
 export async function packStatsForProjects(
   projectIds: string[],
 ): Promise<
-  Record<string, { documents: number; pages: number; lines: number }>
+  Record<
+    string,
+    {
+      documents: number;
+      pages: number;
+      lines: number;
+      /** Which consultant packages are on file, read from the
+       *  register of the effective run. Null when the run's type
+       *  cannot be read. Recomputes on every call, so the day a
+       *  package lands the card follows without a backfill. */
+      stage: StageRead | null;
+    }
+  >
 > {
   if (projectIds.length === 0) return {};
   const runs = await db
-    .select({ id: scopeRuns.id, projectId: scopeRuns.projectId })
+    .select({
+      id: scopeRuns.id,
+      projectId: scopeRuns.projectId,
+      projectType: projects.type,
+    })
     .from(scopeRuns)
+    .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
     .where(
       and(
         inArray(scopeRuns.projectId, projectIds),
@@ -2446,6 +2465,7 @@ export async function packStatsForProjects(
         runId: scopeRunDocuments.runId,
         documents: sql<number>`count(*)::int`,
         pages: sql<number>`coalesce(sum(${scopeRunDocuments.pageCount}), 0)::int`,
+        kinds: sql<string[]>`coalesce(array_agg(${scopeRunDocuments.kind}) filter (where ${scopeRunDocuments.kind} is not null), '{}')`,
       })
       .from(scopeRunDocuments)
       .where(inArray(scopeRunDocuments.runId, runIds))
@@ -2468,7 +2488,12 @@ export async function packStatsForProjects(
   const linesByRun = new Map(itemAgg.map((r) => [r.runId, r.lines]));
   const out: Record<
     string,
-    { documents: number; pages: number; lines: number }
+    {
+      documents: number;
+      pages: number;
+      lines: number;
+      stage: StageRead | null;
+    }
   > = {};
   for (const run of runs) {
     const d = docsByRun.get(run.id);
@@ -2476,6 +2501,10 @@ export async function packStatsForProjects(
       documents: Number(d?.documents ?? 0),
       pages: Number(d?.pages ?? 0),
       lines: Number(linesByRun.get(run.id) ?? 0),
+      stage: documentationStage({
+        registerKinds: d?.kinds ?? [],
+        projectType: run.projectType as ScopeProjectType,
+      }),
     };
   }
   return out;

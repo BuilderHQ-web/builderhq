@@ -1281,3 +1281,50 @@ describe("enforceNoteGrounding — plurals and sparse pages never punish", () =>
     expect(r.flagged).toEqual([]);
   });
 });
+
+describe("packReadiness and the structural gate", () => {
+  const base = {
+    items: [{ status: "evidenced", depth: "full" }],
+    conflicts: [] as Array<{ severity: string }>,
+    namedMissingCount: 0,
+  };
+
+  test("fails an extension with no structural set, which the old type gate let through", () => {
+    const r = packReadiness({
+      ...base,
+      registerKinds: ["planning"],
+      projectType: "extension",
+    });
+    expect(r.verdict).toBe("budget_only");
+    expect(r.factors.join(" ")).toContain("No structural engineering");
+  });
+
+  test("still fails a new build with no structural set", () => {
+    expect(
+      packReadiness({
+        ...base,
+        registerKinds: ["architectural"],
+        projectType: "multi_dwelling",
+      }).verdict,
+    ).toBe("budget_only");
+  });
+
+  test("does not raise it against a renovation, which may never need an engineer", () => {
+    const r = packReadiness({
+      ...base,
+      registerKinds: ["architectural"],
+      projectType: "renovation",
+    });
+    expect(r.factors.join(" ")).not.toContain("No structural engineering");
+  });
+
+  test("passes once the structural set is on file", () => {
+    const r = packReadiness({
+      ...base,
+      registerKinds: ["planning", "structural"],
+      projectType: "extension",
+    });
+    expect(r.factors.join(" ")).not.toContain("No structural engineering");
+    expect(r.verdict).toBe("fixed_price");
+  });
+});

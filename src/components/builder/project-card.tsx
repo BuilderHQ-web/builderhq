@@ -36,6 +36,7 @@ import {
   Bookmark,
   BookmarkCheck,
   Building,
+  FileClock,
   Files,
   Home,
   Layers,
@@ -94,6 +95,12 @@ export interface CardPackStats {
   documents: number;
   pages: number;
   lines: number;
+  /** Which consultant packages are on file, derived from the register
+   *  on every read. Null on legacy rounds with nothing analysed. */
+  stage?: {
+    stage: "planning" | "partial" | "documented";
+    label: string;
+  } | null;
 }
 
 export function ProjectCard({
@@ -259,6 +266,29 @@ export function ProjectCard({
                 {packStats.lines} scope{" "}
                 {plural(packStats.lines, "item", "items")} identified
               </span>
+            </span>
+          </p>
+        ) : null}
+
+        {/* What stage the documents are at. Derived from the register,
+            so it moves on its own the day a consultant package lands.
+            Shown at every stage on purpose: a "Fully documented" badge
+            beside it is what stops "Planning stage" reading as a
+            warning rather than a fact. */}
+        {packStats?.stage ? (
+          <p className="mt-1.5">
+            <span
+              className={[
+                "inline-flex items-center gap-1.5 rounded-full border px-2 py-[3px] text-[10.5px] font-ui font-medium tracking-[0.01em]",
+                packStats.stage.stage === "documented"
+                  ? "border-[rgba(10,125,115,0.3)] bg-[rgba(10,125,115,0.07)] text-[#0a7d73]"
+                  : packStats.stage.stage === "partial"
+                    ? "border-[rgba(217,164,65,0.4)] bg-[rgba(217,164,65,0.09)] text-[#8a6414]"
+                    : "border-border-subtle bg-surface-muted/70 text-text-muted",
+              ].join(" ")}
+            >
+              <FileClock className="size-3 shrink-0" />
+              {packStats.stage.label}
             </span>
           </p>
         ) : null}

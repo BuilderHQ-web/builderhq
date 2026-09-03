@@ -31,6 +31,7 @@ import {
   SCOPE_ITEMS,
   getScopeItem,
   itemsFor,
+  structuralExpected,
   type ScopeProjectType,
 } from "@/modules/scope";
 import type {
@@ -1112,9 +1113,16 @@ export function packReadiness(args: {
     );
   }
 
-  const newBuild =
-    args.projectType === "single_dwelling" || args.projectType === "multi_dwelling";
-  if (newBuild && !args.registerKinds.includes("structural")) {
+  // Every type except a renovation puts new structure in the ground,
+  // and an extension does it through its footings, its framing and the
+  // beam over the wall it opens. This read single or multi dwelling
+  // only, so an extension with no engineer in the register could still
+  // be called ready for a fixed price. Shared with the builder-facing
+  // documentation stage so the two can never disagree.
+  if (
+    structuralExpected(args.projectType) &&
+    !args.registerKinds.includes("structural")
+  ) {
     hard = true;
     factors.push(
       "No structural engineering in the pack: footings, framing and steel would be priced on assumption.",

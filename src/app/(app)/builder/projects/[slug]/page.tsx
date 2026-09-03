@@ -15,11 +15,12 @@ import {
   getInviterForProject,
 } from "@/modules/tenders";
 import { packSummary } from "@/modules/tenders/schedule";
-import { listOpenConflictsForProject } from "@/modules/scope-engine";
 import {
+  listOpenConflictsForProject,
   getProjectSchedule,
   listAddenda,
   getRoundContextForBuilders,
+  packStatsForProjects,
 } from "@/modules/scope-engine";
 import { hasFullVerificationForApproval } from "@/modules/verification";
 import { listForUserOnProject } from "@/modules/messaging";
@@ -77,6 +78,11 @@ export default async function BuilderProjectPage({
         highlights: unlocked ? [] : rawPack.highlights.slice(0, 4),
       }
     : null;
+  // The documentation stage, derived from the effective run's register
+  // on every request. No stored field, so an uploaded structural set
+  // changes this the moment its re-read is approved.
+  const docStage =
+    (await packStatsForProjects([preview.id]))[preview.id]?.stage ?? null;
   const latestAddendum = addenda[0]
     ? { number: addenda[0].number, issuedAtISO: addenda[0].issuedAt.toISOString() }
     : null;
@@ -161,6 +167,7 @@ export default async function BuilderProjectPage({
       pack={pack}
       latestAddendum={latestAddendum}
       clientBrief={roundContext.brief}
+      docStage={docStage}
       advisories={unlocked ? roundContext.advisories : []}
       schedule={unlocked ? schedule : null}
       invitedBy={invitedBy}
