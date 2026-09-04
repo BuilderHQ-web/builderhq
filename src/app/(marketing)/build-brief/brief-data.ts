@@ -3254,23 +3254,22 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     displayDate: "Friday, 4 September 2026",
     title: "A regulator just described the problem we write about every week.",
     standfirst:
-      "ASIC found most home insurance claims it reviewed included a cash settlement, and on cyclone claims the offer was often built from a single quote the insurer had chosen. Input prices for house construction posted their sharpest quarterly rise since 2022. And Victoria was the only large state where dwelling approvals rose.",
+      "ASIC found most home insurance claims it reviewed included a cash settlement, and on cyclone claims the offer was often built from a single quote the insurer had chosen. Victoria was the only large state where dwelling approvals rose in July. And the forecasts do not have it hitting its housing target in any year they cover.",
     seoTitle: "The Build Brief 009: When One Quote Sets the Price",
     seoDescription:
-      "ASIC found most home insurance claims it reviewed included a cash settlement, often priced off a single quote the insurer chose. Building input prices rose 2.1%.",
+      "ASIC found most home insurance claims it reviewed included a cash settlement, often priced off a single quote the insurer chose. Victoria approvals rose 9.7%.",
     keywords: [
       "home insurance cash settlement australia",
       "asic cash settlement report 2026",
       "insurance repair quote comparison",
       "insurer preferred supplier repairs",
       "what happens if my insurance payout is too low",
-      "construction material prices june quarter 2026",
-      "abs producer price index house construction",
-      "input prices house construction australia",
+      "victoria housing target 80000 homes",
+      "victorian housing starts 2025",
+      "hia housing outlook 2026",
       "building approvals victoria july 2026",
       "victorian dwelling approvals",
       "abs building approvals july 2026",
-      "electric cable price increase construction",
       "how to compare builder quotes",
       "architect tender platform australia",
       "builderhq",
@@ -3279,19 +3278,19 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     announcement: {
       kicker: "From the network",
       navLabel: "From the network",
-      headline: "Architects have started running their rounds",
+      headline: "Architects have started running their tenders",
       headlineAccent: "with us.",
       standfirst:
-        "We put a camera in front of a few of them and asked what changed.",
+        "We asked a few of our users what it is like to tender on BuilderHQ.",
       image: {
         src: "/build-brief/issue-009/testimonial-shoot.webp",
         alt: "An architect seated in an armchair on set, speaking into a boom microphone, with a camera in the foreground filming the interview.",
       },
       paragraphs: [
-        "Design practices have been running tender rounds on BuilderHQ for a few months now. Long enough to have an opinion, so we went and asked for it.",
-        "The short version, in their words. The work that used to land on the architect after documentation, chasing builders and reading three pricing formats to find the gaps, now takes a fraction of the time. The round is structured before it goes out, so what comes back can be read side by side.",
-        "That is the whole point of it. Not more quotes. Comparable ones.",
-        "[Hear what they said](https://www.instagram.com/reel/Dc0PncFTw7O/), and see [the Brunswick round](#the-feature) further down for what one looks like from the inside.",
+        "Architects have been running tenders on BuilderHQ for a few months now. Long enough to have a view, so we asked for it.",
+        "Here is what they told us. The job that used to land on the architect after the drawings are done, ringing builders and reading three different price formats, now takes a fraction of the time.",
+        "The tender is set up before it goes out, so the prices that come back line up. That is the point of it. Not more quotes. Quotes you can compare.",
+        "[Hear what they said](https://www.instagram.com/reel/Dc0PncFTw7O/), or see [the Brunswick tender](#the-feature) below for what one looks like from the inside.",
       ],
       closing: "Not more quotes. Comparable ones.",
       cta: { label: "See how it works for design practices", href: "/for/architects" },
@@ -3303,8 +3302,8 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         "ASIC published a review of home insurance claims on Sunday. At least 63% of the claims it looked at included a cash settlement rather than the insurer managing the repair. On claims from Cyclone Jasper, insurers relied on a single quote in 52% of them, and 73% of those quotes came from the insurer’s own preferred supplier.",
         "One builder told ASIC they had undercut their own costs by 40% for the insurer.",
         "This is repair work, not a new build, and the parties are different. But the mechanism is the one we write about every Friday. When one quote decides what work is worth, and the party paying picks who writes it, the number is not a market price. It is one opinion.",
-        "Elsewhere: input prices for house construction posted their sharpest quarterly rise since 2022, and some components moved several times faster than the headline. Victoria was the only large state where dwelling approvals rose in July, though its houses went the other way.",
-        "The Feature is a Brunswick extension that went out to tender this week. It is worth reading for the timings.",
+        "Elsewhere: Victoria was the only large state where dwelling approvals rose in July, though its own houses went the other way. And the forecasts say the state does not reach its housing target in any year they cover.",
+        "The Feature is a Brunswick extension that went out to tender this week. One planning set on Tuesday, three builders pricing it by Wednesday.",
       ],
       signoff: "The BuilderHQ Team",
     },
@@ -3356,53 +3355,6 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
       {
         n: "02",
-        kicker: "The Cost",
-        headline: "Building input prices just posted their sharpest quarterly rise",
-        headlineAccent: "since 2022.",
-        stat: {
-          value: "+2.1%",
-          label: "input prices to house construction, June quarter 2026",
-          sub: "up 3.8% over the year",
-        },
-        chart: {
-          kind: "diverging",
-          title: "What moved inside the 2.1%",
-          desc: "Input prices to house construction rose 2.1% in the June quarter 2026. Electric cable and conduit rose 11.2%, electrical equipment 7.4%, other metal products 2.6% and other materials 2.5%, while installed gas and electrical appliances fell 0.2%.",
-          valueHeading: "Change over the June quarter 2026",
-          bars: [
-            { label: "Electric cable and conduit", value: 11.2, display: "+11.2%", accent: true },
-            { label: "Electrical equipment", value: 7.4, display: "+7.4%", accent: true },
-            { label: "Other metal products", value: 2.6, display: "+2.6%" },
-            { label: "Other materials", value: 2.5, display: "+2.5%" },
-            { label: "Inputs to house construction, headline", value: 2.1, display: "+2.1%" },
-            { label: "Installed gas and electrical appliances", value: -0.2, display: "-0.2%" },
-          ],
-          zeroLabel: "no change",
-          footnote:
-            "June quarter 2026, ABS producer price index. Every figure is a quarterly movement.",
-        },
-        body: [
-          "Input prices to house construction rose 2.1% over the June quarter and 3.8% over the year. It is the sharpest quarterly rise since 2022.",
-          "The headline understates what is happening underneath it. Electric cable and conduit rose 11.2% in the quarter, inside an electrical equipment group that rose 7.4%. Other metal products rose 2.6% and other materials 2.5%.",
-          "Those are not finishes a client chooses between. They are the services running through every home, priced into every job, and the cable is moving more than five times faster than the headline.",
-          "The practical consequence is that a cost plan priced earlier in the year is unlikely to hold, and the gap will not be spread evenly. A services heavy scope has moved further than a simple one. Worth [testing the build cost](/estimate_request_landing_page) again if your numbers are a few months old.",
-        ],
-        source:
-          "ABS, Producer Price Indexes, Australia, June quarter 2026, input to house construction. Component movements are quarterly and drawn from the same release",
-        weekend: "The headline moved 2.1%. The cable moved 11.2%.",
-        takes: {
-          owners:
-            "Ask when your estimate was priced. A services heavy scope has moved more than the headline suggests.",
-          designers:
-            "Decisions on services and hydraulics carry more cost weight than they did six months ago.",
-          builders:
-            "The component detail is useful in a variation conversation. It carries more than a general statement about costs.",
-          brokers:
-            "Contingency set against a headline figure may not cover a services heavy build.",
-        },
-      },
-      {
-        n: "03",
         kicker: "The Pipeline",
         headline: "Victoria was the only large state where approvals",
         headlineAccent: "rose.",
@@ -3447,65 +3399,104 @@ export const BRIEF_ISSUES: BriefIssue[] = [
             "More multi-unit approvals means more construction lending enquiry, with a different risk profile from detached.",
         },
       },
+      {
+        n: "03",
+        kicker: "The Forecast",
+        headline: "Victoria is not expected to hit its housing target in any",
+        headlineAccent: "forecast year.",
+        stat: {
+          value: "56,630",
+          label: "homes started in Victoria in 2025",
+          sub: "the state target is 80,000 a year",
+        },
+        chart: {
+          kind: "bars",
+          title: "Victorian housing starts against the target",
+          desc: "Victoria started 56,630 homes in 2025. The Housing Industry Association does not forecast the state exceeding 60,000 starts in any year before 2028. The state target is 80,000 a year.",
+          valueHeading: "Homes",
+          bars: [
+            { label: "Started in Victoria, 2025", value: 56630, display: "56,630", accent: true },
+            { label: "Forecast ceiling before 2028", value: 60000, display: "under 60,000", accent: true },
+            { label: "State target, every year", value: 80000, display: "80,000" },
+          ],
+          footnote:
+            "The distance between the bars is the shortfall. The axis starts at zero so it is not exaggerated.",
+        },
+        body: [
+          "Victoria started 56,630 homes in 2025. The state target is 80,000 a year.",
+          "The Housing Industry Association’s latest outlook, released on 31 August, does not have Victoria going past 60,000 starts in any year before 2028. It does not have the state reaching 80,000 in any year it forecasts.",
+          "Read that beside the signal above. Victoria had the best approvals result of any large state in July. Both things are true at once. A good month is not a recovery, and an approval is not a start.",
+          "That gap is the part worth understanding. An approval is permission. A start is money, trades and time committed. What sits between the two is feasibility, finance and capacity, and that is where a project either goes ahead or does not.",
+          "If you are planning work over the next two or three years, the plain reading is that good trades will not get easier to book. The problem is not demand. It is the capacity to build.",
+        ],
+        source:
+          "Housing Industry Association, Housing Outlook, 31 August 2026. Victorian starts and forecast figures as supplied by HIA",
+        weekend: "A good month is not a recovery.",
+        takes: {
+          owners:
+            "Trade availability is not about to improve. Book early and get the dates in writing.",
+          designers:
+            "Demand for design work should hold. The squeeze is further down the chain, at delivery.",
+          builders:
+            "Capacity is the limit, not enquiry. Picking the right projects matters more than winning more of them.",
+          brokers:
+            "A shortfall running for years keeps pressure under prices and under construction lending demand.",
+        },
+      },
     ],
     feature: {
       kicker: "The Feature",
-      headline: "The drawings answered 34 lines. The other 105 came",
-      headlineAccent: "from the owner.",
+      headline: "The drawings covered 34 items. Our software found the other",
+      headlineAccent: "105.",
       standfirst:
-        "A Brunswick extension, from one planning set to three builders pricing the same schedule, inside a day and a half.",
+        "One town planning set on Tuesday. A full scope of works, the gaps found, the allowances set, and three builders pricing it. Inside a day.",
       paragraphs: [
-        "A rear extension to a single storey brick house in Brunswick went out to tender this week. Three bedrooms, one bathroom, a new garage off the rear lane. The kind of job that makes up most of the work in Melbourne’s inner north.",
-        "It arrived with one document. An eleven page town planning set, which is what a project of this size has at this stage, and which is the point of everything below.",
+        "A rear extension to a single storey brick house in Brunswick went out to tender this week. Three bedrooms, one bathroom, a new garage off the back lane. The kind of job that makes up most of the work in Melbourne’s inner north.",
+        "It came to us with one document: an eleven page town planning set. That is what most projects have at this stage.",
       ],
       sections: [
         {
-          heading: "What the drawings could answer",
+          heading: "What the software did with it",
           paragraphs: [
-            "Read against the schedule of work a house of that type needs, the planning set settled 34 lines. Another 108 did not apply to this project at all.",
-            "That left 105 open. Not because the drawings are poor. Because planning drawings are drawn to win a permit, not to price a build, and nobody should expect them to do both.",
-          ],
-        },
-        {
-          heading: "What the owner answered",
-          paragraphs: [
-            "All 105, in one hour and eighteen minutes. Each answer became an instruction every builder can see: 96 went to the builders to price, 5 carry an allowance at a stated figure, and 4 were held back for a decision later.",
+            "It read the drawings and pulled out 34 scope items. Then, knowing the type of work involved, it worked out everything else a job like this needs and added another 105.",
+            "That is the part that usually takes a week. A planning set is drawn to get a permit, so nobody expects it to carry a full scope. The software fills in the rest.",
+            "The owner then answered all 105 in an hour and eighteen minutes. Each answer is visible to every builder, so they are all pricing the same thing.",
           ],
         },
         {
           heading: "What happened when it opened",
           paragraphs: [
-            "The round published 42 seconds after the last answer. The first builder paid for a place 24 minutes later, the second at 56 minutes, the third that afternoon.",
-            "All three are now pricing the same 247 lines, in the same order, against the same instructions. This is the part a practice used to absorb after documentation, and the reason [architects have started bringing us their rounds](#announcement).",
+            "The architect opened it to three builders. Two spots went inside the hour, the third shortly after.",
+            "For a builder, getting in this early is the whole point. You see the job before it is shopped around, you have time to price it properly rather than overnight, and you are talking to the owner while they are still making decisions. That is worth more than another lead.",
           ],
         },
       ],
       factBox: {
-        title: "The round, in figures",
+        title: "The tender, in figures",
         rows: [
           { k: "Documents in", v: "1 town planning set, 11 pages" },
-          { k: "Scope lines produced", v: "247" },
-          { k: "Trade groups covered", v: "31" },
-          { k: "Settled by the drawings", v: "34" },
-          { k: "Not applicable to this project", v: "108" },
-          { k: "Open questions left", v: "105" },
-          { k: "Time to answer them", v: "1 hr 18 min" },
-          { k: "Builder places", v: "3, all taken" },
+          { k: "Scope items from the drawings", v: "34" },
+          { k: "Added by the software", v: "105" },
+          { k: "Total scope items", v: "247" },
+          { k: "Trades covered", v: "31" },
+          { k: "Owner answered the 105 in", v: "1 hr 18 min" },
+          { k: "Builder spots", v: "3, all taken" },
+          { k: "Start to finish", v: "Inside a day" },
         ],
       },
       pullQuote:
-        "Planning drawings are drawn to win a permit, not to price a build.",
+        "A planning set is drawn to get a permit. The rest of the scope has to come from somewhere.",
       source:
         "BuilderHQ platform data, September 2026. The project is described in general terms and no party is named",
       takes: {
         owners:
-          "Your planning set is a start, not a price. [Put a project through the same process](/) and the questions get answered before anyone quotes.",
+          "You do not need a full set of drawings to get real prices. [Put a project up](/) and the questions get answered before anyone quotes.",
         designers:
-          "105 open lines is what a planning set leaves. Settling them is the work. [See how it works for design practices](/for/architects).",
+          "This is the work you used to do after the drawings were finished. [See how it works for architects](/for/architects).",
         builders:
-          "Three places, one schedule, every builder answering the same lines. [See what a round looks like](/for/builders).",
+          "Three spots, one list, everyone pricing the same job. [See what a tender looks like](/for/builders).",
         brokers:
-          "A round that settles its gaps before pricing gives you a contract sum with less room to move once drawdown starts.",
+          "A tender that settles its gaps before pricing gives you a contract sum with less room to move later.",
       },
     },
     partnerCorner: {
@@ -3566,12 +3557,12 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         a: "A single price has nothing to be read against. There is no way to see what it includes, what it leaves out, or what it has assumed, so the number cannot be tested. When the party paying also chooses who writes the quote, the figure that results reflects one view of the work rather than a market price.",
       },
       {
-        q: "How much did construction input prices rise in the June quarter 2026?",
-        a: "Input prices to house construction rose 2.1% over the June quarter and 3.8% over the year, the sharpest quarterly rise since 2022, on the ABS producer price index. Components moved much further: electric cable and conduit rose 11.2% in the quarter, within an electrical equipment group up 7.4%.",
+        q: "How many homes did Victoria start in 2025?",
+        a: "56,630, against a state target of 80,000 a year. The Housing Industry Association's outlook, published on 31 August 2026, does not forecast Victoria exceeding 60,000 starts in any year before 2028. It does not have the state reaching 80,000 in any year it covers.",
       },
       {
-        q: "Which construction materials are rising fastest in Australia?",
-        a: "On the June quarter 2026 ABS producer price index, electric cable and conduit rose 11.2% and the wider electrical equipment group rose 7.4%, against a headline of 2.1% for inputs to house construction. Other metal products rose 2.6% and other materials 2.5%, while installed gas and electrical appliances fell 0.2%.",
+        q: "What is the difference between a building approval and a housing start?",
+        a: "An approval is permission to build. A start is money, trades and time committed to the job. A project can be approved and never begin, which is why a strong approvals month does not necessarily mean more homes are being built. Feasibility, finance and capacity all sit between the two.",
       },
       {
         q: "Did building approvals rise or fall in July 2026?",
@@ -3609,11 +3600,11 @@ export const BRIEF_ISSUES: BriefIssue[] = [
         ],
       },
       {
-        heading: "Construction input prices",
+        heading: "The forecast",
         links: [
           {
-            label: "ABS, Producer Price Indexes, Australia, June quarter 2026",
-            href: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/producer-price-indexes-australia/latest-release",
+            label: "Housing Industry Association, Housing Outlook, 31 August 2026",
+            href: "https://hia.com.au/our-industry/economics/data-forecasts/resource/state-and-national-outlook",
           },
         ],
       },
@@ -3641,10 +3632,11 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       },
     ],
     creditLine:
-      "This edition used data and reporting from the Australian Securities and Investments Commission, the Australian Bureau of Statistics and Nimbus Workshop. The Build Brief is compiled by BuilderHQ, Melbourne.",
+      "This edition used data and reporting from the Australian Securities and Investments Commission, the Australian Bureau of Statistics, the Housing Industry Association and Nimbus Workshop. The Build Brief is compiled by BuilderHQ, Melbourne.",
     sources: [
       "the Australian Securities and Investments Commission",
       "the Australian Bureau of Statistics",
+      "the Housing Industry Association",
       "Nimbus Workshop",
     ],
   },

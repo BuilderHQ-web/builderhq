@@ -40,6 +40,10 @@ export interface BriefBarsSpec {
   /** Scale maximum; defaults to the largest value (axis starts at 0). */
   max?: number;
   bars: BriefBarDatum[];
+  /** A note under the chart, as the diverging and figures shapes carry.
+   *  Bars went without one until an edition needed to say what the axis
+   *  was doing. */
+  footnote?: string;
 }
 
 export interface BriefSlopeSpec {
@@ -225,6 +229,11 @@ export function BriefBars({ spec }: { spec: BriefBarsSpec }) {
           );
         })}
       </div>
+      {spec.footnote ? (
+        <p className="mt-3 text-[12px] leading-[1.5] text-text-muted">
+          {spec.footnote}
+        </p>
+      ) : null}
       <SrTable
         caption={`${spec.title}. ${spec.desc}`}
         valueHeading={spec.valueHeading}
