@@ -1735,6 +1735,85 @@ export const PARTNERS: Partner[] = [
     joined: "2026",
   },
   {
+    slug: "dcm-building-design",
+    kind: "architect",
+    draft: true,
+    roleLabel: "Building design practice",
+    name: "DCM Building Design",
+    monogram: "DC",
+    logo: "/partners/dcm-building-design/logo.png",
+    principal: "Duncan Cox and Chris McCabe",
+    suburb: "Currimundi",
+    state: "QLD",
+    states: ["QLD", "NSW", "VIC"],
+    tagline:
+      "A Sunshine Coast practice that took four national design awards in a single night, designing coastal homes, duplexes and multi-residential across Queensland, New South Wales and Victoria.",
+    disciplines: ["New homes and renovations", "Duplexes and multi-residential", "Coastal design"],
+    google: { rating: 5.0, reviews: 6 },
+    awards: [
+      {
+        label: "National winner, New Residential Design",
+        sub: "Building Designers Association of Australia, 2022",
+      },
+      {
+        label: "National winner, Multi-Residential",
+        sub: "Building Designers Association of Australia, 2022",
+      },
+      {
+        label: "Three Queensland state awards",
+        sub: "Building Design Queensland, 2022",
+      },
+    ],
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "6 reviews" },
+      {
+        label: "National awards",
+        value: "4",
+        sub: "in one night, Melbourne 2022",
+      },
+      {
+        label: "Designing since",
+        value: "2015",
+        sub: "a seven-strong studio",
+      },
+    ],
+    why: "In 2022 a practice barely seven years old walked out of the national Building Designers Association of Australia awards in Melbourne with four accolades in a single night. What makes that haul unusual is its spread. DCM took the national title in new residential design for Oceanic, a family home at Warana, and in the same evening won nationally for a duplex on Neerim Drive. Very few practices are entrusted with both the one-off dream home and the density product, and fewer still are judged the best in the country at each. Three Building Design Queensland state awards followed in the same year. Underneath the trophies sits a straightforward ambition: to make places that answer the beauty of their coastal setting with something timeless rather than fashionable, and to get it right because a house long outlives everyone’s first enthusiasm for it. For an owner on the Sunshine Coast, whether the project is a family home or a pair of townhouses, this is talent of a proven national standard.",
+    about:
+      "DCM Building Design was founded in 2015 by Duncan Cox and Chris McCabe, who lead it as directors from a loft studio at Currimundi. The name carries their initials and the principle the office works to, Design, Collaborate, Marvel, and the team has since grown to seven, among them a concept design lead who trained as an architect, interior-qualified designers and a senior technician. The work spans new builds, renovations, duplexes and multi-residential projects, and stretches to the genuinely unusual, including commercial aquarium design. Clients are walked through the full process and introduced to the builders, engineers, town planners, certifiers, landscape architects and surveyors a project needs, drawing on relationships built up across the industry. The practice takes on work throughout Queensland and into New South Wales and Victoria, with recent homes at Glenview and Pelican Waters.",
+    facts: {
+      established: "2015",
+      basedIn: "Currimundi, QLD",
+      serves: "QLD, NSW and VIC",
+      focus: "Coastal homes, duplexes and multi-residential",
+    },
+    website: "https://www.dcmbuildingdesign.com.au",
+    instagram: "https://www.instagram.com/dcmbuildingdesign/",
+    facebook: "https://www.facebook.com/dcmbuildingdesign",
+    linkedin: "https://www.linkedin.com/company/dcm-building-design/",
+    galleryUrl: "https://www.dcmbuildingdesign.com.au",
+    work: [
+      {
+        title: "Curved pool pavilion",
+        suburb: "Glenview",
+        type: "New home",
+        image: "/partners/dcm-building-design/glenview.jpg",
+      },
+      {
+        title: "Battens and stone facade",
+        suburb: "Pelican Waters",
+        type: "New home",
+        image: "/partners/dcm-building-design/pelican-waters.jpg",
+      },
+      {
+        title: "Courtyard pool home",
+        suburb: "Sunshine Coast",
+        type: "New home",
+        image: "/partners/dcm-building-design/sunshine-coast.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
     slug: "neighbourhood-architecture",
     kind: "architect",
     name: "Neighbourhood Architecture",
