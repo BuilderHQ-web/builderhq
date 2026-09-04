@@ -219,6 +219,10 @@ export interface BriefIssue {
    */
   announcement?: {
     kicker: string;
+    /** Contents-line label. Defaults to "The Announcement", which suits
+     *  a launch and misdescribes an edition where the block is readers
+     *  talking rather than us. */
+    navLabel?: string;
     headline: string;
     headlineAccent?: string;
     standfirst?: string;
@@ -3274,6 +3278,7 @@ export const BRIEF_ISSUES: BriefIssue[] = [
     ogImage: "/build-brief/og-issue-009.jpg",
     announcement: {
       kicker: "From the network",
+      navLabel: "From the network",
       headline: "Architects have started running their rounds",
       headlineAccent: "with us.",
       standfirst:
