@@ -40,6 +40,10 @@ export interface BriefBarsSpec {
   /** Scale maximum; defaults to the largest value (axis starts at 0). */
   max?: number;
   bars: BriefBarDatum[];
+  /** A note under the chart, as the diverging and figures shapes carry.
+   *  Bars went without one until an edition needed to say what the axis
+   *  was doing. */
+  footnote?: string;
 }
 
 export interface BriefSlopeSpec {
@@ -193,7 +197,13 @@ export function BriefBars({ spec }: { spec: BriefBarsSpec }) {
   const max = spec.max ?? Math.max(...spec.bars.map((b) => b.value));
   return (
     <figure aria-label={`Chart: ${spec.title}. ${spec.desc}`}>
-      <div aria-hidden className="flex flex-col gap-3.5">
+      {/* Bars is the original shape, from Issue 002, and it predates the
+          visible caption every later shape carries. The titles were
+          always written to be read; they were simply never shown. */}
+      <figcaption className="text-[12.5px] font-ui font-semibold text-text">
+        {spec.title}
+      </figcaption>
+      <div aria-hidden className="mt-4 flex flex-col gap-3.5">
         {spec.bars.map((b) => {
           const pct = Math.max((b.value / max) * 100, 0.75);
           return (
@@ -225,6 +235,11 @@ export function BriefBars({ spec }: { spec: BriefBarsSpec }) {
           );
         })}
       </div>
+      {spec.footnote ? (
+        <p className="mt-3 text-[12px] leading-[1.5] text-text-muted">
+          {spec.footnote}
+        </p>
+      ) : null}
       <SrTable
         caption={`${spec.title}. ${spec.desc}`}
         valueHeading={spec.valueHeading}
