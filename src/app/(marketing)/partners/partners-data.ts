@@ -2908,7 +2908,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "nimbus-workshop",
     kind: "architect",
-    draft: true,
     roleLabel: "Architecture and interiors studio",
     name: "Nimbus Workshop",
     monogram: "NW",
@@ -2936,8 +2935,8 @@ export const PARTNERS: Partner[] = [
     ],
     awards: [
       {
-        label: "Bronze, Single and Multi-family House Design",
-        sub: "International Architecture and Design Awards · 2026 · Trafalgar",
+        label: "Award winning architect",
+        sub: "Single and multi-family house design · International Architecture and Design Awards 2026 · Trafalgar",
       },
     ],
     why: "Nimbus Workshop approaches architecture and interiors as one connected process. This gives clients greater consistency from the initial design direction through to the finer details of the finished home, with each decision considered as part of the overall experience rather than in isolation.\n\nTheir involvement can begin well before detailed design, helping clients understand a site’s opportunities, planning considerations and potential project direction before committing further. As the project develops, they coordinate design, consultants, approvals and cost considerations to give clients greater clarity through each stage.\n\nFor clients looking for a thoughtful, design-led home with strong attention to detail and a clear process from early planning through to delivery, Nimbus Workshop offers a well-rounded architectural approach.",
