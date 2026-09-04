@@ -488,7 +488,14 @@ export default async function BriefIssuePage({
             <span className="text-text-dim shrink-0">In this edition</span>
             {[
               ...(issue.announcement
-                ? [{ label: "The Announcement", href: "#announcement" }]
+                ? [
+                    {
+                      // "The Announcement" suits a launch. An edition whose
+                      // block is readers talking rather than us names itself.
+                      label: issue.announcement.navLabel ?? "The Announcement",
+                      href: "#announcement",
+                    },
+                  ]
                 : []),
               ...(issue.podcast
                 ? [{ label: "The Podcast", href: "#podcast" }]

@@ -154,6 +154,12 @@ export interface Partner {
   /** Direct booking link (e.g. Calendly) — renders as a calendar icon in
    *  the profile's link cluster, beside the socials. */
   booking?: string;
+  /** Multiplier on the logo's size caps inside the avatar tile. A compact
+   *  square glyph reads small next to the wide wordmarks most partners
+   *  have, because it is limited by height where they are limited by
+   *  width. This lets one mark ask for more room without resizing every
+   *  other partner's tile. Defaults to 1. */
+  logoScale?: number;
   /** Where the selected-work images link to (e.g. the practice's gallery). */
   galleryUrl?: string;
   /** Architects: selected work, text-first (images optional). */
@@ -2895,6 +2901,80 @@ export const PARTNERS: Partner[] = [
         suburb: "Caulfield",
         type: "Multi-dwelling",
         image: "/partners/buildkomm/caulfield.jpg",
+      },
+    ],
+    joined: "2026",
+  },
+  {
+    slug: "nimbus-workshop",
+    kind: "architect",
+    roleLabel: "Architecture and interiors studio",
+    name: "Nimbus Workshop",
+    monogram: "NW",
+    logo: "/partners/nimbus-workshop/logo.png",
+    logoScale: 1.2,
+    suburb: "Melbourne",
+    state: "VIC",
+    tagline:
+      "A Melbourne studio that draws the architecture, the interiors and the landscape as one piece of work.",
+    disciplines: [
+      "New homes",
+      "Interiors",
+      "Townhouses and dual occupancy",
+      "Specialist Disability Accommodation",
+    ],
+    google: { rating: 5.0, reviews: 10 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "10 reviews" },
+      { label: "Projects", value: "12", sub: "in the portfolio" },
+      {
+        label: "Typical build value",
+        value: "$2m+",
+        sub: "homes, townhouses and SDA",
+      },
+    ],
+    awards: [
+      {
+        label: "Award winning architect",
+        sub: "Single and multi-family house design · International Architecture and Design Awards 2026 · Trafalgar",
+      },
+    ],
+    why: "Nimbus Workshop approaches architecture and interiors as one connected process. This gives clients greater consistency from the initial design direction through to the finer details of the finished home, with each decision considered as part of the overall experience rather than in isolation.\n\nTheir involvement can begin well before detailed design, helping clients understand a site’s opportunities, planning considerations and potential project direction before committing further. As the project develops, they coordinate design, consultants, approvals and cost considerations to give clients greater clarity through each stage.\n\nFor clients looking for a thoughtful, design-led home with strong attention to detail and a clear process from early planning through to delivery, Nimbus Workshop offers a well-rounded architectural approach.",
+    about:
+      "Nimbus Workshop is a Melbourne-based architecture and interior design practice creating considered residential spaces with a strong connection to site, landscape and everyday living. Their work brings architecture and interiors together as one cohesive design process, with careful attention to natural light, proportion, materiality and long-term performance. From early site investigation and concept design through approvals, documentation and interior detailing, Nimbus takes a collaborative approach focused on creating homes that are functional, enduring and distinctly personal.",
+    facts: {
+      basedIn: "Melbourne, VIC",
+      serves: "Metropolitan Melbourne",
+      focus: "Homes, townhouses and interiors",
+    },
+    website: "https://www.nimbusworkshop.com.au",
+    instagram: "https://www.instagram.com/nimbus_workshop",
+    facebook: "https://www.facebook.com/people/Nimbus-Workshop/61583735793011/",
+    galleryUrl: "https://www.nimbusworkshop.com.au/portfolio-collections/my-portfolio",
+    work: [
+      {
+        title: "Trafalgar",
+        suburb: "Mont Albert",
+        type: "Single dwelling",
+        year: "2024",
+        image: "/partners/nimbus-workshop/trafalgar.webp",
+        href: "https://www.nimbusworkshop.com.au/portfolio-collections/my-portfolio/project-title-4",
+      },
+      {
+        title: "Liston",
+        suburb: "Glen Iris",
+        type: "Single dwelling",
+        year: "2024",
+        image: "/partners/nimbus-workshop/liston.webp",
+        href: "https://www.nimbusworkshop.com.au/portfolio-collections/my-portfolio/project-title-6",
+      },
+      {
+        title: "Atelier",
+        suburb: "Mont Albert",
+        type: "Office fitout",
+        year: "2024",
+        image: "/partners/nimbus-workshop/atelier.webp",
+        href: "https://www.nimbusworkshop.com.au/portfolio-collections/my-portfolio/first-construction-office",
       },
     ],
     joined: "2026",

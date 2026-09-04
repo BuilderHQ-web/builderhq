@@ -219,11 +219,18 @@ export interface BriefIssue {
    */
   announcement?: {
     kicker: string;
+    /** Contents-line label. Defaults to "The Announcement", which suits
+     *  a launch and misdescribes an edition where the block is readers
+     *  talking rather than us. */
+    navLabel?: string;
     headline: string;
     headlineAccent?: string;
     standfirst?: string;
     paragraphs: string[];
     chart?: BriefChartSpec;
+    /** A photograph, where the announcement is about people rather
+     *  than a product surface. Runs full column width above the copy. */
+    image?: { src: string; alt: string };
     /** Closing line, set apart from the body. */
     closing?: string;
     cta?: { label: string; href: string };
@@ -243,8 +250,10 @@ export interface BriefIssue {
      *  link from the register. */
     partnerSlug: string;
     headline: string;
-    principal: string;
-    principalRole: string;
+    /** Only rendered beside a portrait. A practice featured without a
+     *  named individual omits both rather than inventing one. */
+    principal?: string;
+    principalRole?: string;
     /** In the partner's own voice — only ever supplied, never written
      *  for them. */
     principalQuote?: string;
@@ -3236,6 +3245,403 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "the Housing Industry Association",
       "Planning Victoria",
       "Build Australia",
+    ],
+  },
+  {
+    slug: "issue-009",
+    number: 9,
+    date: "2026-09-04",
+    displayDate: "Friday, 4 September 2026",
+    title: "A regulator just described the problem we write about every week.",
+    standfirst:
+      "ASIC found most home insurance claims it reviewed included a cash settlement, and on cyclone claims the offer was often built from a single quote the insurer had chosen. Input prices for house construction posted their sharpest quarterly rise since 2022. And Victoria was the only large state where dwelling approvals rose.",
+    seoTitle: "The Build Brief 009: When One Quote Sets the Price",
+    seoDescription:
+      "ASIC found most home insurance claims it reviewed included a cash settlement, often priced off a single quote the insurer chose. Building input prices rose 2.1%.",
+    keywords: [
+      "home insurance cash settlement australia",
+      "asic cash settlement report 2026",
+      "insurance repair quote comparison",
+      "insurer preferred supplier repairs",
+      "what happens if my insurance payout is too low",
+      "construction material prices june quarter 2026",
+      "abs producer price index house construction",
+      "input prices house construction australia",
+      "building approvals victoria july 2026",
+      "victorian dwelling approvals",
+      "abs building approvals july 2026",
+      "electric cable price increase construction",
+      "how to compare builder quotes",
+      "architect tender platform australia",
+      "builderhq",
+    ],
+    ogImage: "/build-brief/og-issue-009.jpg",
+    announcement: {
+      kicker: "From the network",
+      navLabel: "From the network",
+      headline: "Architects have started running their rounds",
+      headlineAccent: "with us.",
+      standfirst:
+        "We put a camera in front of a few of them and asked what changed.",
+      paragraphs: [
+        "Design practices have been running tender rounds on BuilderHQ for a few months now. Long enough to have an opinion, so we went and asked for it.",
+        "The short version, in their words. The work that used to land on the architect after documentation, chasing builders and reading three pricing formats to find the gaps, now takes a fraction of the time. The round is structured before it goes out, so what comes back can be read side by side.",
+        "That is the whole point of it. Not more quotes. Comparable ones.",
+        "[Hear what they said](https://www.instagram.com/reel/Dc0PncFTw7O/), and see [the Brunswick round](#the-feature) further down for what one looks like from the inside.",
+      ],
+      closing: "Not more quotes. Comparable ones.",
+      cta: { label: "See how it works for design practices", href: "/for/architects" },
+    },
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading: "A regulator just described the problem we write about every week.",
+      paragraphs: [
+        "ASIC published a review of home insurance claims on Sunday. At least 63% of the claims it looked at included a cash settlement rather than the insurer managing the repair. On claims from Cyclone Jasper, insurers relied on a single quote in 52% of them, and 73% of those quotes came from the insurer’s own preferred supplier.",
+        "One builder told ASIC they had undercut their own costs by 40% for the insurer.",
+        "This is repair work, not a new build, and the parties are different. But the mechanism is the one we write about every Friday. When one quote decides what work is worth, and the party paying picks who writes it, the number is not a market price. It is one opinion.",
+        "Elsewhere: input prices for house construction posted their sharpest quarterly rise since 2022, and some components moved several times faster than the headline. Victoria was the only large state where dwelling approvals rose in July, though its houses went the other way.",
+        "The Feature is a Brunswick extension that went out to tender this week. It is worth reading for the timings.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "The Quote",
+        headline: "ASIC has documented what happens when one quote sets",
+        headlineAccent: "the price.",
+        stat: {
+          value: "63%",
+          label: "of reviewed home insurance claims included a cash settlement",
+          sub: "ASIC review, published 31 August 2026",
+        },
+        chart: {
+          kind: "figures",
+          title: "How a repair price narrows to one opinion",
+          desc: "At least 63% of the home insurance claims ASIC reviewed included a cash settlement. On Cyclone Jasper claims, insurers relied on a single quote in 52% of them, and 73% of those single quotes came from the insurer’s preferred supplier.",
+          valueHeading: "Share",
+          figures: [
+            { label: "of claims reviewed included a cash settlement", value: 63, display: "63%" },
+            { label: "of cyclone claims relied on a single quote", value: 52, display: "52%" },
+            { label: "of those quotes came from the insurer’s preferred supplier", value: 73, display: "73%", accent: true },
+          ],
+          footnote:
+            "The second and third figures are Cyclone Jasper claims. Each narrows the one before it.",
+        },
+        body: [
+          "ASIC published a review of home insurance cash settlements on 31 August. At least 63% of the final claims it reviewed included a cash settlement rather than the insurer managing the repair itself.",
+          "The detail underneath is what matters. On claims arising from Cyclone Jasper, insurers relied on a single quote in 52% of cases, and 73% of those single quotes came from a supplier the insurer had chosen. In one case a builder told ASIC they had undercut their own costs by 40% for the insurer. That is one builder’s account, not a measure of the market.",
+          "This is insurance repair work, not new residential construction, and the parties and the incentives differ. But the mechanism will be familiar to anyone who has run a tender. A single price, prepared by a party chosen by whoever is paying, becomes the number that decides what the work is worth. There is nothing to set it against, so there is no way to see what it includes, what it leaves out, or what it has assumed.",
+          "It is unusual to see a regulator describe the problem this plainly. [Our Perspective on procurement](/build-brief/perspectives/construction-procurement-standard) makes the same argument about how homes are tendered.",
+          "The practical response is the same in both settings. Get more than one price. Make sure they are pricing the same scope. And read what each one excludes before you compare the totals.",
+        ],
+        source:
+          "ASIC, Beyond the payout: ASIC warns home insurers to reduce cash settlement risks, 31 August 2026",
+        weekend: "One quote is not a price. It is an opinion.",
+        takes: {
+          owners:
+            "If you are offered a cash settlement, you can get your own quote. Compare what each one includes before you accept a number.",
+          designers:
+            "Scope definition matters as much on a repair as on a new build. Without it, quotes cannot be compared.",
+          builders:
+            "Work priced from an insurer selected quote can sit well below cost. Know what the scope covers before you take it on.",
+          brokers:
+            "A cash settlement that does not cover the repair leaves a funding gap on the asset.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "The Cost",
+        headline: "Building input prices just posted their sharpest quarterly rise",
+        headlineAccent: "since 2022.",
+        stat: {
+          value: "+2.1%",
+          label: "input prices to house construction, June quarter 2026",
+          sub: "up 3.8% over the year",
+        },
+        chart: {
+          kind: "diverging",
+          title: "What moved inside the 2.1%",
+          desc: "Input prices to house construction rose 2.1% in the June quarter 2026. Electric cable and conduit rose 11.2%, electrical equipment 7.4%, other metal products 2.6% and other materials 2.5%, while installed gas and electrical appliances fell 0.2%.",
+          valueHeading: "Change over the June quarter 2026",
+          bars: [
+            { label: "Electric cable and conduit", value: 11.2, display: "+11.2%", accent: true },
+            { label: "Electrical equipment", value: 7.4, display: "+7.4%", accent: true },
+            { label: "Other metal products", value: 2.6, display: "+2.6%" },
+            { label: "Other materials", value: 2.5, display: "+2.5%" },
+            { label: "Inputs to house construction, headline", value: 2.1, display: "+2.1%" },
+            { label: "Installed gas and electrical appliances", value: -0.2, display: "-0.2%" },
+          ],
+          zeroLabel: "no change",
+          footnote:
+            "June quarter 2026, ABS producer price index. Every figure is a quarterly movement.",
+        },
+        body: [
+          "Input prices to house construction rose 2.1% over the June quarter and 3.8% over the year. It is the sharpest quarterly rise since 2022.",
+          "The headline understates what is happening underneath it. Electric cable and conduit rose 11.2% in the quarter, inside an electrical equipment group that rose 7.4%. Other metal products rose 2.6% and other materials 2.5%.",
+          "Those are not finishes a client chooses between. They are the services running through every home, priced into every job, and the cable is moving more than five times faster than the headline.",
+          "The practical consequence is that a cost plan priced earlier in the year is unlikely to hold, and the gap will not be spread evenly. A services heavy scope has moved further than a simple one. Worth [testing the build cost](/estimate_request_landing_page) again if your numbers are a few months old.",
+        ],
+        source:
+          "ABS, Producer Price Indexes, Australia, June quarter 2026, input to house construction. Component movements are quarterly and drawn from the same release",
+        weekend: "The headline moved 2.1%. The cable moved 11.2%.",
+        takes: {
+          owners:
+            "Ask when your estimate was priced. A services heavy scope has moved more than the headline suggests.",
+          designers:
+            "Decisions on services and hydraulics carry more cost weight than they did six months ago.",
+          builders:
+            "The component detail is useful in a variation conversation. It carries more than a general statement about costs.",
+          brokers:
+            "Contingency set against a headline figure may not cover a services heavy build.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "The Pipeline",
+        headline: "Victoria was the only large state where approvals",
+        headlineAccent: "rose.",
+        stat: {
+          value: "+9.7%",
+          label: "Victorian dwelling approvals, July 2026",
+          sub: "national approvals fell 3.6%",
+        },
+        chart: {
+          kind: "diverging",
+          title: "Dwelling approvals, change over July 2026",
+          desc: "Victoria rose 9.7% while national approvals fell 3.6%. New South Wales fell 8.1% and Queensland fell 13.9%.",
+          valueHeading: "Change over July 2026",
+          bars: [
+            { label: "Victoria", value: 9.7, display: "+9.7%", accent: true },
+            { label: "National", value: -3.6, display: "-3.6%" },
+            { label: "New South Wales", value: -8.1, display: "-8.1%" },
+            { label: "Queensland", value: -13.9, display: "-13.9%" },
+          ],
+          zeroLabel: "no change",
+          footnote:
+            "Seasonally adjusted. Victorian private house approvals fell 4.1% in the same month, so the state’s rise came from apartments and townhouses.",
+        },
+        body: [
+          "Total dwelling approvals fell 3.6% nationally in July to 17,687, with private sector houses down 4.2% to 10,199. Queensland fell 13.9% and New South Wales fell 8.1%.",
+          "Victoria went the other way, rising 9.7% to 4,642. The composition matters. Victorian private house approvals fell 4.1% to 2,939, so the increase came from apartments and townhouses rather than detached homes.",
+          "The value of residential building approved fell 4.9% nationally to $11.26 billion. Fewer dwellings, and fewer approved dollars.",
+          "On the trend measure, which is smoothed rather than seasonally adjusted and so is not directly comparable with the figures above, the ACT rose 7.4%.",
+          "For anyone working in Victoria the useful read is where the work is. Detached approvals are softening while medium density picks up. A practice or a builder set up for townhouses is looking at a different market from one set up for detached houses.",
+        ],
+        source:
+          "ABS, Building Approvals, Australia, July 2026, released 1 September 2026",
+        weekend: "The state went up. The houses went down.",
+        takes: {
+          owners:
+            "Detached approvals are softening, which usually means more builder capacity for that work.",
+          designers:
+            "Medium density is where the Victorian growth is. Practices set up for townhouses are entering a better market.",
+          builders:
+            "The Victorian pipeline is holding against a falling national number, but the mix is shifting away from detached.",
+          brokers:
+            "More multi-unit approvals means more construction lending enquiry, with a different risk profile from detached.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "The drawings answered 34 lines. The other 105 came",
+      headlineAccent: "from the owner.",
+      standfirst:
+        "A Brunswick extension, from one planning set to three builders pricing the same schedule, inside a day and a half.",
+      paragraphs: [
+        "A rear extension to a single storey brick house in Brunswick went out to tender this week. Three bedrooms, one bathroom, a new garage off the rear lane. The kind of job that makes up most of the work in Melbourne’s inner north.",
+        "It arrived with one document. An eleven page town planning set, which is what a project of this size has at this stage, and which is the point of everything below.",
+      ],
+      sections: [
+        {
+          heading: "What the drawings could answer",
+          paragraphs: [
+            "Read against the schedule of work a house of that type needs, the planning set settled 34 lines. Another 108 did not apply to this project at all.",
+            "That left 105 open. Not because the drawings are poor. Because planning drawings are drawn to win a permit, not to price a build, and nobody should expect them to do both.",
+          ],
+        },
+        {
+          heading: "What the owner answered",
+          paragraphs: [
+            "All 105, in one hour and eighteen minutes. Each answer became an instruction every builder can see: 96 went to the builders to price, 5 carry an allowance at a stated figure, and 4 were held back for a decision later.",
+          ],
+        },
+        {
+          heading: "What happened when it opened",
+          paragraphs: [
+            "The round published 42 seconds after the last answer. The first builder paid for a place 24 minutes later, the second at 56 minutes, the third that afternoon.",
+            "All three are now pricing the same 247 lines, in the same order, against the same instructions. This is the part a practice used to absorb after documentation, and the reason [architects have started bringing us their rounds](#announcement).",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The round, in figures",
+        rows: [
+          { k: "Documents in", v: "1 town planning set, 11 pages" },
+          { k: "Scope lines produced", v: "247" },
+          { k: "Trade groups covered", v: "31" },
+          { k: "Settled by the drawings", v: "34" },
+          { k: "Not applicable to this project", v: "108" },
+          { k: "Open questions left", v: "105" },
+          { k: "Time to answer them", v: "1 hr 18 min" },
+          { k: "Builder places", v: "3, all taken" },
+        ],
+      },
+      pullQuote:
+        "Planning drawings are drawn to win a permit, not to price a build.",
+      source:
+        "BuilderHQ platform data, September 2026. The project is described in general terms and no party is named",
+      takes: {
+        owners:
+          "Your planning set is a start, not a price. [Put a project through the same process](/) and the questions get answered before anyone quotes.",
+        designers:
+          "105 open lines is what a planning set leaves. Settling them is the work. [See how it works for design practices](/for/architects).",
+        builders:
+          "Three places, one schedule, every builder answering the same lines. [See what a round looks like](/for/builders).",
+        brokers:
+          "A round that settles its gaps before pricing gives you a contract sum with less room to move once drawdown starts.",
+      },
+    },
+    partnerCorner: {
+      partnerSlug: "nimbus-workshop",
+      headline: "Meet Nimbus Workshop, and an award winning house at Mont Albert.",
+      showLogo: true,
+      logo: "/partners/nimbus-workshop/logo.png",
+      stats: [
+        { value: "5.0", label: "Google rating", star: true },
+        { value: "12", label: "Projects in the portfolio" },
+        { value: "$2m+", label: "Typical build value" },
+      ],
+      why: "Most homes are drawn by one practice and fitted out by another. Nimbus Workshop does both, and the landscape with them, so what is planned and what is finally installed answer to the same people.",
+      practice:
+        "A Melbourne architecture and interior design studio working on single homes, dual occupancy sites and townhouses, along with Specialist Disability Accommodation and a smaller amount of commercial fitout. Most of its work runs through the eastern suburbs.",
+      welcome:
+        "A studio that holds the architecture, the interiors and the landscape in one place is exactly the kind we want in front of people planning a build.",
+      project: {
+        kicker: "The project",
+        name: "Trafalgar, Mont Albert",
+        paragraphs: [
+          "Trafalgar is a single house on a leafy street in Mont Albert, finished in 2024. The plan turns inward rather than outward: the home is arranged around its own courtyard, which is connected to a tearoom and does the work a back garden usually does, bringing light and air deep into the middle of the house.",
+          "The centrepiece is a sculptural spiral staircase rising through a double height void. Around it the materials are left to do the talking, natural and tactile, lit softly rather than brightly. The landscaping carries the same idea out to the street, so the house settles into a row of established trees instead of announcing itself.",
+          "In 2026 it took an award for single and multi-family house design at the International Architecture and Design Awards.",
+        ],
+        hero: {
+          src: "/build-brief/issue-009/trafalgar.webp",
+          alt: "The street elevation of Trafalgar, a two storey house at Mont Albert with a rendered upper form, stone detailing and a timber entry door.",
+        },
+        credit: "Image supplied by Nimbus Workshop.",
+        facts: [
+          { k: "Location", v: "Mont Albert, VIC" },
+          { k: "Type", v: "Single dwelling" },
+          { k: "Completed", v: "2024" },
+          { k: "Recognition", v: "International Architecture and Design Awards, 2026" },
+        ],
+        link: {
+          label: "See the project on Nimbus Workshop",
+          href: "https://www.nimbusworkshop.com.au/portfolio-collections/my-portfolio/project-title-4",
+        },
+      },
+    },
+    overToYou: {
+      question: "What would you most like The Build Brief to help you understand?",
+      body: "Reply with a line. The topics readers ask about most shape where we take future editions.",
+    },
+    faq: [
+      {
+        q: "What did ASIC find about home insurance cash settlements?",
+        a: "In a review published on 31 August 2026, ASIC found that at least 63% of the final home insurance claims it reviewed included a cash settlement rather than the insurer managing the repair. On claims arising from Cyclone Jasper, insurers relied on a single quote in 52% of cases, and 73% of those single quotes came from a supplier the insurer had chosen.",
+      },
+      {
+        q: "Can I get my own quote if my insurer offers a cash settlement?",
+        a: "Yes. A cash settlement is an offer, and you can obtain your own quote to compare against it. The important step is checking that both quotes cover the same scope of work, because a lower figure often reflects a narrower scope rather than a better price. Read what each one excludes before comparing the totals.",
+      },
+      {
+        q: "Why is one quote a problem when pricing building work?",
+        a: "A single price has nothing to be read against. There is no way to see what it includes, what it leaves out, or what it has assumed, so the number cannot be tested. When the party paying also chooses who writes the quote, the figure that results reflects one view of the work rather than a market price.",
+      },
+      {
+        q: "How much did construction input prices rise in the June quarter 2026?",
+        a: "Input prices to house construction rose 2.1% over the June quarter and 3.8% over the year, the sharpest quarterly rise since 2022, on the ABS producer price index. Components moved much further: electric cable and conduit rose 11.2% in the quarter, within an electrical equipment group up 7.4%.",
+      },
+      {
+        q: "Which construction materials are rising fastest in Australia?",
+        a: "On the June quarter 2026 ABS producer price index, electric cable and conduit rose 11.2% and the wider electrical equipment group rose 7.4%, against a headline of 2.1% for inputs to house construction. Other metal products rose 2.6% and other materials 2.5%, while installed gas and electrical appliances fell 0.2%.",
+      },
+      {
+        q: "Did building approvals rise or fall in July 2026?",
+        a: "Total dwelling approvals fell 3.6% nationally to 17,687 in seasonally adjusted terms, with private sector houses down 4.2% to 10,199. Queensland fell 13.9% and New South Wales fell 8.1%. The value of residential building approved fell 4.9% to $11.26 billion.",
+      },
+      {
+        q: "Why did Victorian dwelling approvals rise in July 2026?",
+        a: "Victoria rose 9.7% to 4,642 dwellings, the only large state to increase. The rise came from apartments and townhouses rather than detached homes: Victorian private house approvals fell 4.1% to 2,939 over the same month.",
+      },
+      {
+        q: "Is a town planning drawing set enough to price a build?",
+        a: "Not on its own. On the Brunswick extension covered in this edition, an eleven page town planning set settled 34 lines of the schedule a house of that type requires, 108 did not apply, and 105 were left open. Planning drawings are prepared to obtain a permit rather than to price construction, so the remaining questions have to be answered before builders can price the same scope.",
+      },
+    ],
+    share:
+      "ASIC found most home insurance claims it reviewed included a cash settlement, often priced off a single quote the insurer chose. This week’s Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    furtherReading: [
+      { label: "Issue 008: more work is coming, fewer people are learning to do it", href: "/build-brief/issue-008" },
+      { label: "Issue 007: every Victorian reform date on one timeline", href: "/build-brief/issue-007" },
+      { label: "Issue 006: the apartments that never started", href: "/build-brief/issue-006" },
+      {
+        label: "Perspective: Australian construction has a procurement problem",
+        href: "/build-brief/perspectives/construction-procurement-standard",
+      },
+    ],
+    sourceGroups: [
+      {
+        heading: "Cash settlements",
+        links: [
+          {
+            label: "ASIC, Beyond the payout: ASIC warns home insurers to reduce cash settlement risks, 31 August 2026",
+            href: "https://www.asic.gov.au/about-asic/news-centre/articles/beyond-the-payout-asic-warns-home-insurers-to-reduce-cash-settlement-risks",
+          },
+        ],
+      },
+      {
+        heading: "Construction input prices",
+        links: [
+          {
+            label: "ABS, Producer Price Indexes, Australia, June quarter 2026",
+            href: "https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/producer-price-indexes-australia/latest-release",
+          },
+        ],
+      },
+      {
+        heading: "Building approvals",
+        links: [
+          {
+            label: "ABS, Building Approvals, Australia, July 2026",
+            href: "https://www.abs.gov.au/statistics/industry/building-and-construction/building-approvals-australia/jul-2026",
+          },
+        ],
+      },
+      {
+        heading: "Partner Corner",
+        links: [
+          {
+            label: "Nimbus Workshop, Trafalgar",
+            href: "https://www.nimbusworkshop.com.au/portfolio-collections/my-portfolio/project-title-4",
+          },
+          {
+            label: "Nimbus Workshop on the BuilderHQ register",
+            href: "/partners/nimbus-workshop",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Australian Securities and Investments Commission, the Australian Bureau of Statistics and Nimbus Workshop. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Australian Securities and Investments Commission",
+      "the Australian Bureau of Statistics",
+      "Nimbus Workshop",
     ],
   },
   {

@@ -80,7 +80,12 @@ export function PartnerAvatar({
           // A square mark is limited by height and sits at 74% as before.
           // A wide lockup is limited by width, where 74% left the mark
           // looking undersized in the tile, so width may run to 88%.
-          style={{ maxWidth: "88%", maxHeight: "74%" }}
+          // logoScale lifts both caps for a mark that still reads small
+          // at them, clamped so it never reaches the tile edge.
+          style={{
+            maxWidth: `${Math.min(94, 88 * (partner.logoScale ?? 1))}%`,
+            maxHeight: `${Math.min(94, 74 * (partner.logoScale ?? 1))}%`,
+          }}
         />
       </span>
     );
