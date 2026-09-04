@@ -3441,6 +3441,67 @@ export const PARTNERS: Partner[] = [
     ],
     joined: "2026",
   },
+  {
+    slug: "bg-construction",
+    kind: "builder",
+    draft: true,
+    roleLabel: "Custom home builder",
+    name: "BG Construction",
+    monogram: "BG",
+    logo: "/partners/bg-construction/logo.png",
+    principal: "Brendan Giurdanella",
+    suburb: "Kensington",
+    state: "VIC",
+    tagline:
+      "A Kensington builder led by registered builder Brendan Giurdanella, thirty years in the trade, delivering architect designed homes and the complex renovations that ask more of a builder.",
+    disciplines: ["Custom homes", "Renovations and extensions", "Architect designed builds"],
+    institution: {
+      name: "Master Builders Victoria",
+      role: "Member",
+      note: "Director Brendan Giurdanella, registered builder",
+    },
+    google: { rating: 5, reviews: 27 },
+    stats: [
+      { label: "Google rating", value: "5.0", star: true, sub: "27 reviews" },
+      { label: "Years of experience", value: "30", sub: "director Brendan Giurdanella" },
+      { label: "Residential projects", value: "147", sub: "across Melbourne" },
+    ],
+    why: "BG Construction is led by Brendan Giurdanella, a registered builder with thirty years behind him and something increasingly rare in the trade: genuine breadth. Where many builders settle into a niche, Brendan has spent three decades across the full span of construction, and it has left him fluent in the parts of a build that decide whether it runs smoothly, buildability, sequencing, and the coordination of architects, engineers and trades. He stays hands on across every BG project, from the first conversation to handover, and his clients, many of whom come back to him, talk about the same things: integrity, sound judgement, and a straight answer when it matters. For an owner taking an architect’s design to construction, a builder this experienced and this closely involved is exactly the steady hand we want on the tools.",
+    aboutLabel: "About the business",
+    about:
+      "BG Construction is a Kensington based building company working across Melbourne, led by its founder and director Brendan Giurdanella and a member of Master Builders Victoria. The company builds architect designed new homes and takes on the complex renovations and extensions that ask more of a builder, with an approach that starts well before the first slab: BG engages the architects, consultants and suppliers on a project early, to resolve how it will actually be built, manage the risk, and translate a design cleanly from drawings to a finished home. That early involvement underpins the things clients notice most, tight cost control, a programme that holds, and clear decisions along the way, all delivered by a closely managed team and a settled network of proven trades. The work is held to a simple standard: quality craftsmanship, careful documentation, and doing things properly.",
+    facts: {
+      basedIn: "Kensington, VIC",
+      serves: "Melbourne",
+      focus: "Custom homes, renovations and extensions",
+    },
+    website: "https://www.bgconstruction.com.au/",
+    instagram: "https://www.instagram.com/bgconstruction/",
+    facebook: "https://www.facebook.com/p/BG-Construction-61575239545619/",
+    linkedin: "https://www.linkedin.com/company/bg-construction-au/",
+    galleryUrl: "https://www.bgconstruction.com.au/",
+    work: [
+      {
+        title: "Essendon I",
+        suburb: "Essendon",
+        type: "Custom home",
+        image: "/partners/bg-construction/essendon-i.jpg",
+      },
+      {
+        title: "Essendon II",
+        suburb: "Essendon",
+        type: "Custom home",
+        image: "/partners/bg-construction/essendon-ii.jpg",
+      },
+      {
+        title: "Keilor East",
+        suburb: "Keilor East",
+        type: "New home",
+        image: "/partners/bg-construction/keilor-east.jpg",
+      },
+    ],
+    joined: "2026",
+  },
 
   /* ── Finance partners ───────────────────────────────────────────── */
   /* Real, in review (draft) */
