@@ -3283,6 +3283,10 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       headlineAccent: "with us.",
       standfirst:
         "We put a camera in front of a few of them and asked what changed.",
+      image: {
+        src: "/build-brief/issue-009/testimonial-shoot.webp",
+        alt: "An architect seated in an armchair on set, speaking into a boom microphone, with a camera in the foreground filming the interview.",
+      },
       paragraphs: [
         "Design practices have been running tender rounds on BuilderHQ for a few months now. Long enough to have an opinion, so we went and asked for it.",
         "The short version, in their words. The work that used to land on the architect after documentation, chasing builders and reading three pricing formats to find the gaps, now takes a fraction of the time. The round is structured before it goes out, so what comes back can be read side by side.",

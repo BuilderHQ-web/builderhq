@@ -621,6 +621,22 @@ export default async function BriefIssuePage({
               {/* The strip needs air above it: it follows a serif deck,
                   and its figcaption sits tight to the text baseline
                   without one. */}
+              {/* A photograph, where the announcement is about people.
+                  Full column width, above the copy, same treatment the
+                  podcast block gives its studio frame. */}
+              {issue.announcement.image ? (
+                <div className="relative mt-8 overflow-hidden rounded-xl border border-border-subtle">
+                  <Image
+                    src={issue.announcement.image.src}
+                    alt={issue.announcement.image.alt}
+                    width={2400}
+                    height={1602}
+                    sizes="(min-width: 1024px) 900px, 100vw"
+                    quality={90}
+                    className="w-full h-auto"
+                  />
+                </div>
+              ) : null}
               {issue.announcement.chart ? (
                 <div className="mt-9">
                   <BriefChart spec={issue.announcement.chart} />
