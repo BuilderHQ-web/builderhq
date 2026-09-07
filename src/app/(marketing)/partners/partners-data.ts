@@ -2908,7 +2908,6 @@ export const PARTNERS: Partner[] = [
   {
     slug: "ferrari-architecture",
     kind: "architect",
-    draft: true,
     roleLabel: "Architecture practice",
     name: "Ferrari Architecture",
     monogram: "FA",
