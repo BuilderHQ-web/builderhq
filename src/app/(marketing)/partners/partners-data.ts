@@ -2990,7 +2990,7 @@ export const PARTNERS: Partner[] = [
     principal: "Miguel and Kristina Raveche",
     suburb: "Melbourne",
     state: "VIC",
-    tagline: "A Melbourne firm founded by a builder and an interior designer.",
+    tagline: "A design-led Melbourne builder that treats every project as if it were their own.",
     disciplines: [
       "Custom homes",
       "Renovations and extensions",
@@ -3011,9 +3011,9 @@ export const PARTNERS: Partner[] = [
         sub: "registered builder since 2019",
       },
     ],
-    why: "Having the builder and interior designer within the same firm gives owners a more connected process. On many projects, these roles sit in separate businesses, which can lead to design details being lost between planning and construction. Here, the same team is responsible for both the design intent and how it is delivered on site.\n\nTheir approach is hands-on, with equal focus on design, technical detail and site coordination from early planning through to completion. The goal is to create homes that are well considered, well built and still feel right years after handover.\n\nClients can bring their own completed drawings for The Builder’s Project to quote and build from, or work with the in-house design team from concept through to construction. Either way, the process starts with an estimate and timeframe, followed by a clear six-stage process so owners always know what happens next.",
+    why: "The Builder’s Project is what happens when a builder cares about design as much as a designer does. Miguel and Kristina Raveche run the studio with a small, like-minded team, and both are personally involved in every build.\n\nThe approach is hands-on, and clients stay part of the conversation the whole way through. Design, technical detail and site coordination are given the same attention, from early planning to handover.\n\nThat approach has earned them a quietly loyal following across Melbourne. For an owner who wants a builder who cares about the detail, and who keeps the process collaborative rather than transactional, they are a rare find.",
     about:
-      "The Builder’s Project has been building in Melbourne since 2016. The work runs across custom homes, renovations, extensions, additions and development projects, with heritage restoration a particular strength. Miguel Raveche is director and builder. Kristina Raveche is creative director, leading interiors and styling. A construction manager, a lead carpenter and an operations manager complete the team. Recent projects include Windsor House and Prahran House, both heritage renewals, and Russel House, a new build. Windsor House ran from building permit to finished home in under six months.",
+      "The studio specialises in custom homes, renovations and extensions, and has been building in Melbourne since 2016. It started from the belief that good homes begin with thoughtful design and quality craftsmanship, pairing practical construction expertise with a real appreciation for architecture. Natural light, spatial planning, materials and finishing details are weighed on every project.\n\nIts team of builders, designers and skilled tradespeople works closely with clients, consultants and trades from concept through to completion, with clear communication and transparency at every stage. The result is homes that feel considered and timeless, with craftsmanship built to last.",
     facts: {
       established: "2016",
       experience: "17 yrs",
