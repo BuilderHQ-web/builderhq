@@ -2920,7 +2920,7 @@ export const PARTNERS: Partner[] = [
       "A Melbourne architecture practice led by Renato Ferrari, an architect who trained in Brazil and has practised in Australia since 2012.",
     disciplines: ["Architecture", "Interiors", "Landscape"],
     stats: [
-      { label: "Years in practice", value: "10+" },
+      { label: "Experience", value: "10+ yrs" },
       {
         label: "Practised in",
         value: "Brazil",
@@ -2932,9 +2932,9 @@ export const PARTNERS: Partner[] = [
         sub: "WA, VIC, SA, NT and TAS",
       },
     ],
-    why: "The practice takes on the architecture, the interiors and the landscape as one job. For an owner that means one set of drawings and one person answerable for how the building, the rooms and the garden meet, instead of three consultants meeting somewhere in the middle.\n\nRenato Ferrari describes the approach as small moves for large effect. He starts from what a site already has and adjusts it, rather than starting over. The view behind it is that a home is shaped as much by how people live in it, and by what surrounds it, as by what gets built.",
+    why: "The practice designs the architecture, the interiors and the landscape together. For an owner that means the building, the rooms and the garden are planned as one, so a choice made in any of them carries through to the others.\n\nRenato Ferrari describes the approach as small moves for large effect. He starts from what a site already has and adjusts it, rather than starting over. The view behind it is that a home is shaped as much by how people live in it, and by what surrounds it, as by what gets built.",
     about:
-      "Ferrari Architecture is a Melbourne practice. Renato Ferrari is its director and a registered architect in Australia. Published work runs from houses to a sports pavilion, an inclusive architecture project and two commercial fit-outs, so the practice is not tied to one project type. Recent residential work includes Fitzroy North, completed in 2025, and House on a Hill, at planning approval.",
+      "Ferrari Architecture is a Melbourne practice. Renato Ferrari is its director and a registered architect in Australia. The work spans houses, a sports pavilion, an inclusive architecture project and two commercial fit-outs. Some of their residential work includes Fitzroy North, completed in 2025, and House on a Hill, currently at planning approval.",
     facts: {
       basedIn: "Melbourne, VIC",
       serves: "Melbourne",
