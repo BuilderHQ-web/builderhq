@@ -1931,6 +1931,7 @@ export interface DocStage {
   detail: string;
   opportunity: string;
   awaiting: string[];
+  note?: string;
 }
 
 /**
@@ -1986,6 +1987,11 @@ function DocumentationStagePanel({
             </li>
           ))}
         </ul>
+      ) : null}
+      {stage.note ? (
+        <p className="mt-2.5 text-[12.5px] leading-[1.65] text-text-default font-medium max-w-[70ch]">
+          {stage.note}
+        </p>
       ) : null}
       {!unlocked && stage.opportunity ? (
         <p className="mt-3 border-t border-border-subtle/60 pt-2.5 text-[12px] leading-[1.65] text-text-muted max-w-[70ch]">

@@ -2426,6 +2426,31 @@ export async function packPhaseForProjects(
  * effective pack simply have no entry. Three small grouped queries,
  * nothing clever.
  */
+/**
+ * The runner's documentation announcement, read off the run's overview.
+ *
+ * It lives there rather than in a column because it is builder-facing
+ * copy about this read of these documents, exactly like the summary
+ * beside it, and because a re-read SHOULD clear it: new documents mean
+ * the announcement is re-made, not carried. Unrecognised shapes are
+ * ignored rather than thrown, since the overview is model output.
+ */
+function announcementOf(
+  overview: unknown,
+): { announce?: string[]; announceNote?: string | null } {
+  if (!overview || typeof overview !== "object") return {};
+  const o = overview as Record<string, unknown>;
+  const announce = Array.isArray(o.announcePackages)
+    ? o.announcePackages.filter((k): k is string => typeof k === "string")
+    : undefined;
+  if (!announce || announce.length === 0) return {};
+  return {
+    announce,
+    announceNote:
+      typeof o.announceNote === "string" ? o.announceNote : null,
+  };
+}
+
 export async function packStatsForProjects(
   projectIds: string[],
 ): Promise<
@@ -2449,6 +2474,7 @@ export async function packStatsForProjects(
       id: scopeRuns.id,
       projectId: scopeRuns.projectId,
       projectType: projects.type,
+      overview: scopeRuns.overview,
     })
     .from(scopeRuns)
     .innerJoin(projects, eq(projects.id, scopeRuns.projectId))
@@ -2505,6 +2531,10 @@ export async function packStatsForProjects(
       stage: documentationStage({
         registerKinds: d?.kinds ?? [],
         projectType: run.projectType as ScopeProjectType,
+        // The runner's announcement, set on the run at review. It only
+        // ever narrows which absent packages are named and clears
+        // itself once they land; see documentationStage.
+        ...announcementOf(run.overview),
       }),
     };
   }

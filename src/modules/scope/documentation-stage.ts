@@ -63,6 +63,14 @@ export interface StageRead {
   opportunity: string;
   onFile: string[];
   awaiting: string[];
+  /**
+   * The runner's one sentence about the packages they have chosen to
+   * announce, empty unless `announce` named a package that is still
+   * absent. It clears itself: the moment every announced package is on
+   * the register the sentence stops rendering, so it cannot go stale
+   * in the direction that misleads a builder.
+   */
+  note: string;
 }
 
 /**
@@ -96,6 +104,21 @@ const list = (items: string[]): string =>
 export function documentationStage(args: {
   registerKinds: Array<string | null>;
   projectType: ScopeProjectType;
+  /**
+   * Package kinds the runner has chosen to put in front of builders,
+   * when naming every absence at once would bury the one that actually
+   * moves a price. It NARROWS which absent packages are named. It never
+   * touches `stage`, `label` or `onFile`, which stay derived from the
+   * full expected list, so a narrowed announcement can never make a
+   * part-documented pack read as documented. An announced package that
+   * has since landed drops out on its own, and when every announced
+   * package has landed the full list is named again rather than
+   * nothing: the failure direction is always toward saying more.
+   */
+  announce?: string[];
+  /** The runner's sentence, rendered only while `announce` still has
+   *  an absent package to attach it to. */
+  announceNote?: string | null;
 }): StageRead | null {
   const kinds = new Set(args.registerKinds.filter((k): k is string => !!k));
   if (kinds.size === 0) return null;
@@ -104,7 +127,15 @@ export function documentationStage(args: {
   const onFile = expected.filter((p) => kinds.has(p.kind));
   const awaiting = expected.filter((p) => !kinds.has(p.kind));
   const onFileLabels = onFile.map((p) => p.label);
-  const awaitingLabels = awaiting.map((p) => p.label);
+
+  // The narrowing. `named` is what a builder is shown; `awaiting` is
+  // what is true, and it alone decides the stage below.
+  const announced = new Set(args.announce ?? []);
+  const narrowed = awaiting.filter((p) => announced.has(p.kind));
+  const named = narrowed.length > 0 ? narrowed : awaiting;
+  const awaitingLabels = named.map((p) => p.label);
+  const note =
+    narrowed.length > 0 && args.announceNote ? args.announceNote.trim() : "";
 
   // A set of planning drawings with no architectural issue behind it
   // is the earliest position there is, and it is the one worth saying
@@ -121,6 +152,7 @@ export function documentationStage(args: {
       opportunity: "",
       onFile: onFileLabels,
       awaiting: [],
+      note: "",
     };
   }
 
@@ -131,11 +163,12 @@ export function documentationStage(args: {
       headline: "Early in the documentation.",
       detail: `The town planning drawings are on file and they set the design. ${
         capitalise(list(awaitingLabels))
-      } ${awaiting.length === 1 ? "is" : "are"} still to come, so this round is priced to a budget level rather than a fixed price.`,
+      } ${named.length === 1 ? "is" : "are"} still to come, so this round is priced to a budget level rather than a fixed price.`,
       opportunity:
         "Pricing now puts you in front of the owner and their architect while the working drawings are still being prepared, and buildability input costs nothing to give at this stage. As each consultant package arrives the pack is re-read and re-issued to you as an addendum, so your price moves with the documents rather than against them.",
       onFile: [],
       awaiting: awaitingLabels,
+      note,
     };
   }
 
@@ -148,12 +181,13 @@ export function documentationStage(args: {
         : "The consultant packages are still to come.",
     detail:
       onFile.length > 0
-        ? `The register carries ${list(onFileLabels)}. ${capitalise(list(awaitingLabels))} ${awaiting.length === 1 ? "is" : "are"} not on file yet, so those elements are priced on assumption.`
-        : `${capitalise(list(awaitingLabels))} ${awaiting.length === 1 ? "is" : "are"} not on file yet, so those elements are priced on assumption.`,
+        ? `The register carries ${list(onFileLabels)}. ${capitalise(list(awaitingLabels))} ${named.length === 1 ? "is" : "are"} not on file yet, so ${named.length === 1 ? "that element is" : "those elements are"} priced on assumption.`
+        : `${capitalise(list(awaitingLabels))} ${named.length === 1 ? "is" : "are"} not on file yet, so ${named.length === 1 ? "that element is" : "those elements are"} priced on assumption.`,
     opportunity:
       "The scope of works names every line that is still to be confirmed, so all builders price the same assumptions. As each package arrives the pack is re-read and re-issued to you as an addendum.",
     onFile: onFileLabels,
     awaiting: awaitingLabels,
+    note,
   };
 }
 

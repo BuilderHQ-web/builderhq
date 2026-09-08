@@ -90,3 +90,81 @@ describe("documentationStage", () => {
     expect(s.detail).toContain("Structural engineering is not on file");
   });
 });
+
+/**
+ * The runner's announcement. It exists because naming three absent
+ * packages at once buries the one that actually moves a price, and it
+ * is deliberately built so that every failure direction says MORE
+ * rather than less.
+ */
+describe("documentationStage · the runner's announcement", () => {
+  const sd = {
+    registerKinds: ["architectural", "planning", "soil", "survey"],
+    projectType: "single_dwelling" as const,
+  };
+
+  it("without an announcement every absent package is named", () => {
+    const s = documentationStage(sd)!;
+    expect(s.awaiting).toEqual(["structural engineering", "an energy assessment"]);
+    expect(s.note).toBe("");
+  });
+
+  it("an announcement narrows which absent packages are named", () => {
+    const s = documentationStage({ ...sd, announce: ["structural"] })!;
+    expect(s.awaiting).toEqual(["structural engineering"]);
+    expect(s.detail).toContain("Structural engineering is not on file yet");
+    expect(s.detail).not.toContain("energy");
+  });
+
+  it("the stage itself is never narrowed, so a part-documented pack cannot read as documented", () => {
+    const s = documentationStage({ ...sd, announce: ["structural"] })!;
+    expect(s.stage).toBe("partial");
+    expect(s.label).toBe("Part documented");
+  });
+
+  it("the note renders only while an announced package is still absent", () => {
+    const withNote = documentationStage({
+      ...sd,
+      announce: ["structural"],
+      announceNote: "  The structural engineering is being prepared.  ",
+    })!;
+    expect(withNote.note).toBe("The structural engineering is being prepared.");
+    // The structural set lands. The announcement is spent and the
+    // sentence stops rendering on its own, with no one to remember it.
+    const landed = documentationStage({
+      registerKinds: [...sd.registerKinds, "structural"],
+      projectType: sd.projectType,
+      announce: ["structural"],
+      announceNote: "The structural engineering is being prepared.",
+    })!;
+    expect(landed.note).toBe("");
+    expect(landed.awaiting).toEqual(["an energy assessment"]);
+  });
+
+  it("when every announced package has landed the full list is named again, never nothing", () => {
+    const s = documentationStage({
+      registerKinds: [...sd.registerKinds, "structural"],
+      projectType: sd.projectType,
+      announce: ["structural"],
+    })!;
+    expect(s.awaiting).toEqual(["an energy assessment"]);
+    expect(s.stage).toBe("partial");
+  });
+
+  it("an announced kind that is not a pricing package for this type is ignored", () => {
+    const s = documentationStage({ ...sd, announce: ["landscape"] })!;
+    expect(s.awaiting).toEqual(["structural engineering", "an energy assessment"]);
+  });
+
+  it("a note with no announcement never renders", () => {
+    const s = documentationStage({ ...sd, announceNote: "Coming soon." })!;
+    expect(s.note).toBe("");
+  });
+
+  it("singular and plural read correctly on either side of the narrowing", () => {
+    const one = documentationStage({ ...sd, announce: ["structural"] })!;
+    expect(one.detail).toContain("is not on file yet, so that element is priced on assumption");
+    const both = documentationStage(sd)!;
+    expect(both.detail).toContain("are not on file yet, so those elements are priced on assumption");
+  });
+});
