@@ -93,6 +93,13 @@ export async function GET(request: NextRequest) {
           inArray(tenders.status, ["submitted", "shortlisted"]),
           isNull(tenders.deletedAt),
           isNull(projects.deletedAt),
+          // The example round is furniture, not a job. Its tenders are
+          // seeded with backdated submittedAt and a validityDays, so
+          // every one of them ages into this window and mails the owner
+          // that a builder who does not exist is about to withdraw a
+          // price that was never given. Three owners were emailed before
+          // this was caught.
+          eq(projects.isSample, false),
           sql`${tenders.submittedAt} IS NOT NULL`,
           sql`${tenders.validityDays} IS NOT NULL`,
           // Window: ends within N days, has not already ended.
@@ -178,6 +185,8 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(projectParticipants.status, "invited"),
+          // Never chase a seat on the example round.
+          eq(projects.isSample, false),
           isNull(projectParticipants.remindedAt),
           isNull(projects.deletedAt),
           lte(
@@ -214,6 +223,8 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(tenderBuilderInvites.status, "invited"),
+          // Never chase an invite on the example round.
+          eq(projects.isSample, false),
           isNull(tenderBuilderInvites.remindedAt),
           isNull(projects.deletedAt),
           inArray(projects.status, ["published", "tendering"]),
