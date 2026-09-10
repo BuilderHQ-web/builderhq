@@ -3797,7 +3797,7 @@ export const PARTNERS: Partner[] = [
       serves: "Australia wide",
       focus: "Home, investment and SMSF lending",
     },
-    website: "https://www.inovayt.com.au",
+    website: "https://www.inovayt.com.au/team/jason-pogorelec/",
     instagram: "https://www.instagram.com/jasonpogorelecfinance/",
     linkedin: "https://www.linkedin.com/in/jason-pogorelec-2278b523/",
     servicesLabel: "Where Jason helps",
