@@ -22,7 +22,7 @@ const OUT = path.join(PUB, "og-issue-010.jpg");
 const W = 1200;
 const H = 630;
 
-const titleLines = ["Four homes.", "Ten business days."];
+const titleLines = ["Victoria's faster", "planning assessments"];
 
 let y = 330;
 const TITLE_SIZE = 44;
