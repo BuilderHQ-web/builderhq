@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPartner } from "@/app/(marketing)/partners/partners-data";
+import { kindLabel } from "@/app/(marketing)/partners/partner-profile";
 
 import {
   BRIEF_AUDIENCES,
@@ -635,6 +636,31 @@ export default async function BriefIssuePage({
                     quality={90}
                     className="w-full h-auto"
                   />
+                </div>
+              ) : null}
+              {/* The supporting pair. Half width each, so the lead
+                  frame above stays the photograph of record. They keep
+                  two columns at every width: these are portrait crops,
+                  and stacking them on a phone would make each one
+                  taller than the screen. */}
+              {issue.announcement.imagePair?.length === 2 ? (
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  {issue.announcement.imagePair.map((img) => (
+                    <div
+                      key={img.src}
+                      className="relative overflow-hidden rounded-xl border border-border-subtle"
+                    >
+                      <Image
+                        src={img.src}
+                        alt={img.alt}
+                        width={1100}
+                        height={1647}
+                        sizes="(min-width: 1024px) 440px, 48vw"
+                        quality={88}
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  ))}
                 </div>
               ) : null}
               {issue.announcement.chart ? (
@@ -1387,7 +1413,7 @@ export default async function BriefIssuePage({
                         />
                         {partner ? (
                           <p className="mt-2.5 text-[11.5px] leading-[1.5] text-text-dim">
-                            {partner.roleLabel} · {partner.suburb},{" "}
+                            {kindLabel(partner)} · {partner.suburb},{" "}
                             {partner.state}
                           </p>
                         ) : null}
@@ -1396,7 +1422,7 @@ export default async function BriefIssuePage({
                   </figure>
                 ) : null}
                 <div>
-                  {!pc.portrait ? (
+                  {!pc.portrait && pc.principal ? (
                     <p className="mb-5 text-[13.5px] text-text-muted">
                       <span className="font-ui font-semibold text-text">
                         {pc.principal}
@@ -1455,7 +1481,12 @@ export default async function BriefIssuePage({
                         href={`/partners/${partner.slug}`}
                         className="inline-flex items-center gap-2 rounded-full bg-[#101820] px-5 py-2.5 text-[12.5px] font-ui font-semibold text-white hover:bg-[#1b2733] transition-colors"
                       >
-                        View {partner.name}&apos;s partner profile
+                        {/* A practice name already ending in s takes the
+                            bare apostrophe. "Associates's" is wrong in
+                            any house style. */}
+                        View{" "}
+                        {`${partner.name}${partner.name.endsWith("s") ? "\u2019" : "\u2019s"}`}{" "}
+                        partner profile
                       </Link>
                     ) : null}
                     <Link

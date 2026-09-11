@@ -231,6 +231,18 @@ export interface BriefIssue {
     /** A photograph, where the announcement is about people rather
      *  than a product surface. Runs full column width above the copy. */
     image?: { src: string; alt: string };
+    /**
+     * Two further frames beneath the lead photograph, side by side.
+     *
+     * They exist for the edition where an announcement is about several
+     * people and one frame cannot carry them all. The lead image stays the
+     * photograph of record and these sit under it at half its width,
+     * because three frames at equal weight read as a contact sheet
+     * rather than a lead. Portrait crops suit the pair; a landscape
+     * frame here fights the lead above it. Rendered only in twos: one
+     * would be an orphan and three would need a different layout.
+     */
+    imagePair?: Array<{ src: string; alt: string }>;
     /** Closing line, set apart from the body. */
     closing?: string;
     cta?: { label: string; href: string };
@@ -3638,6 +3650,518 @@ export const BRIEF_ISSUES: BriefIssue[] = [
       "the Australian Bureau of Statistics",
       "the Housing Industry Association",
       "Nimbus Workshop",
+    ],
+  },
+  {
+    slug: "issue-010",
+    number: 10,
+    date: "2026-09-11",
+    displayDate: "Friday, 11 September 2026",
+    title: "Four homes. Ten business days. If the design meets the code.",
+    standfirst:
+      "Victoria will have councils assess developments of up to four homes on a block within ten business days, where the scheme complies with the Townhouse and Low-Rise Code. A median-income household can now afford 12% of the homes sold. And the Reserve Bank has put a rise back on the table for 29 September.",
+    seoTitle: "The Build Brief 010: Four Homes, Ten Business Days",
+    seoDescription:
+      "Victoria will have councils assess up to four homes on a block within ten business days where the design meets the Townhouse and Low-Rise Code. A median-income household can afford 12% of homes sold, down from 43%.",
+    keywords: [
+      "victoria fast track planning approval four homes",
+      "10 business day planning permit victoria",
+      "townhouse and low-rise code victoria",
+      "housing affordability australia 2026",
+      "percentage of homes affordable australia",
+      "rba september 2026 rate decision",
+      "cash rate 4.35 percent",
+      "four homes on one block victoria planning",
+      "how to compare builder quotes",
+      "scope of works from architectural drawings",
+      "construction document conflicts",
+      "architect tender platform australia",
+      "builderhq",
+    ],
+    ogImage: "/build-brief/og-issue-010.jpg",
+    announcement: {
+      kicker: "From the network",
+      navLabel: "From the network",
+      headline: "We asked the people using it. Here is what",
+      headlineAccent: "they said.",
+      standfirst:
+        "Ten editions in, the most useful thing we can publish is not our own view of the platform. It is theirs.",
+      image: {
+        src: "/build-brief/issue-009/testimonial-shoot.webp",
+        alt: "An architect seated in an armchair on set, speaking into a boom microphone, with a camera in the foreground filming the interview.",
+      },
+      imagePair: [
+        {
+          src: "/build-brief/issue-010/interview-01.webp",
+          alt: "A BuilderHQ user seated for a filmed interview, lit from one side against a dark backdrop.",
+        },
+        {
+          src: "/build-brief/issue-010/interview-02.webp",
+          alt: "A second BuilderHQ user seated for a filmed interview, microphone in frame.",
+        },
+      ],
+      paragraphs: [
+        "Over the last few weeks we have been sitting down with architects, designers and builders who run their work through BuilderHQ, putting a camera in front of them and asking one question. What is it like to use.",
+        "No script, and no list of points to hit. We asked for the plain version.",
+        "The answer they keep returning to is not the software. It is the time. Work used to land on the architect once the drawings were finished. Ringing builders, then reading three prices written three different ways. That is now mostly done before the round opens.",
+        "[Watch the conversation we published last week](https://www.instagram.com/reel/Dc0PncFTw7O/), or read [the Feature](#the-feature) below for what sits underneath it.",
+      ],
+      closing: "We would rather you heard it from them.",
+      cta: {
+        label: "See how it works for design practices",
+        href: "/for/architects",
+      },
+    },
+    note: {
+      eyebrow: "This week from the BuilderHQ team",
+      heading:
+        "Approvals are getting faster. Affording the result is getting harder.",
+      paragraphs: [
+        "This is the tenth Build Brief. Ten Fridays. Thank you for the time.",
+        "To the week. Victoria announced on 2 September that eligible developments of up to four homes on a single block will be assessed in ten business days. The standard process can run past sixty. The catch is the entry test: the scheme has to comply with the Townhouse and Low-Rise Code, and a commencement date has not been gazetted yet.",
+        "That lands on top of something we reported [last Friday](/build-brief/issue-009). Victorian dwelling approvals rose 9.7% in July while Victorian private house approvals fell 4.1%, so the growth was already coming from townhouses. The state has now fast-tracked the exact type of home that was carrying its market.",
+        "The second number points the other way. A median-income Australian household can now afford about 12% of the homes sold, down from about 43% five years ago. Victoria is the most affordable state on that measure, and even here it is about 16%.",
+        "Prices have been softening for months. Affordability still got worse, because borrowing capacity fell faster than prices did.",
+        "And the Reserve Bank has put a rate rise back on the table for 29 September.",
+        "The Feature this week is not a market story. It is ours. When we started this publication our software read a set of drawings and produced a list. It now reads them and argues with them, and that turns out to be the part that matters.",
+      ],
+      signoff: "The BuilderHQ Team",
+    },
+    signalsIntro: "Three signals. For everyone in the build.",
+    signals: [
+      {
+        n: "01",
+        kicker: "The Pathway",
+        headline: "Four homes, assessed in ten business days. If the design meets",
+        headlineAccent: "the code.",
+        stat: {
+          value: "10",
+          label:
+            "business days to assess a development of up to four homes on one block",
+          sub: "the standard process often takes more than 60 days",
+        },
+        chart: {
+          kind: "compare",
+          title: "The two routes to a planning decision",
+          desc:
+            "The government says the standard process often takes more than sixty days. Under the new pathway a development of up to four homes on one block is assessed in ten business days, provided it complies with the Townhouse and Low-Rise Code.",
+          rowLabels: [
+            "Time to assess",
+            "What it covers",
+            "The entry test",
+            "Heritage and overlays",
+            "If the design steps outside it",
+          ],
+          left: {
+            heading: "The standard process",
+            cells: [
+              "Often more than 60 days",
+              "Any residential application",
+              "None. Full assessment",
+              "Apply",
+              "You were already in it",
+            ],
+          },
+          right: {
+            heading: "The fast-track pathway",
+            cells: [
+              "10 business days",
+              "Up to four homes on one block",
+              "Complies with the Townhouse and Low-Rise Code",
+              "Still apply",
+              "Back to the standard process",
+            ],
+          },
+          footnote:
+            "Announced 2 September 2026. The council still assesses the application; the pathway sets the timeframe and the entry test. A commencement date has not been gazetted.",
+        },
+        body: [
+          "Victoria’s Minister for Planning, Sonya Kilkenny, announced on 2 September that developments of up to four homes on a single block will be assessed within ten business days.",
+          "The condition is the whole story. To use the pathway, an application has to comply with the Townhouse and Low-Rise Code, including its standards for setbacks, landscaping, privacy and design. Where it does, the council assesses it on the fast-track timeframe. Where it does not, the application goes back to the standard process, which the government says often takes more than sixty days.",
+          "Nothing else is waived. Heritage controls, environmental overlays and the other planning protections continue to apply, so a site carrying one of those is a different proposition from a clean one.",
+          "This extends the pathway the state opened in October last year for two homes on a block. The release says the four-home projects will use that same route.",
+          "The government puts two figures behind the reform, and both belong to the Townhouse and Low-Rise Code rather than to the new four-home pathway. Applications for townhouses and low-rise developments have risen by almost 50% since the code came in, and planning permits for multi-dwelling developments in Melbourne’s middle suburbs have gone from around 2,000 to more than 3,100.",
+          "Read it beside what we reported [last Friday](/build-brief/issue-009). Victorian dwelling approvals rose 9.7% in July while Victorian private house approvals fell 4.1%, so the entire increase came from townhouses and apartments. The state has now put its fastest approval route under the typology already carrying its market.",
+          "The practical consequence sits at design stage, months before anyone applies. A scheme that meets the code takes the short route. A scheme that misses it by one control takes the long one. That makes code compliance a commercial decision as much as a design one, and it is worth pricing the difference before the drawings are finished.",
+        ],
+        callout: {
+          kicker: "Worth checking",
+          title: "The release says now. The amendment is not gazetted.",
+          paragraphs: [
+            "The announcement reads as effective immediately. It says developments of up to four homes will now be assessed in ten business days, and names no start date.",
+            "No amendment giving effect to it has been gazetted. The two-home version of this pathway arrived through one, with a stated date. Until the same happens here, confirm the position with the council before you rely on the timeframe.",
+          ],
+        },
+        source:
+          "Victorian Government, More Homes Built Faster For Working People, 2 September 2026; Planning Victoria, Townhouse and Low-Rise Code",
+        weekend: "Sixty days becomes ten, if you design to the code.",
+        takes: {
+          owners:
+            "A four-home site is about to get materially faster to approve. Check eligibility before you spend on a scheme that sits outside the code.",
+          designers:
+            "Code compliance now decides the approval timeline. Designing to it is worth real money to the client, and worth saying so in the fee proposal.",
+          builders:
+            "Approved work should reach you sooner. Worth asking your design partners what is coming through the new pathway.",
+          brokers:
+            "A shorter approval window shortens holding costs and makes development feasibility easier to model.",
+        },
+      },
+      {
+        n: "02",
+        kicker: "The Squeeze",
+        headline:
+          "Five years ago a median-income household could afford 43% of homes. Now it is",
+        headlineAccent: "12%.",
+        stat: {
+          value: "12%",
+          label:
+            "share of homes sold that a median-income household can afford to repay",
+          sub: "43% five years ago",
+        },
+        chart: {
+          kind: "bars",
+          title: "Share of homes sold that a median-income household can afford",
+          desc:
+            "Nationally the share fell from 43% in 2020-21 to 12% in 2025-26, the lowest on record. Victoria is the most affordable state at 16%.",
+          valueHeading: "Share of homes sold",
+          max: 50,
+          bars: [
+            { label: "Australia, 2020-21", value: 43, display: "43%" },
+            { label: "Victoria, 2025-26", value: 16, display: "16%" },
+            { label: "Australia, 2025-26", value: 12, display: "12%", accent: true },
+          ],
+          footnote:
+            "Affordable here means a median-income household, on about $125,000 a year, could cover the repayments using no more than 30% of gross income, assessed with a 2.5% buffer above the average new mortgage rate, and assuming a 20% deposit and purchase costs already saved. It measures who can service the loan, not who can raise the deposit.",
+        },
+        body: [
+          "A household on the median income can now afford the repayments on about 12% of the homes sold across Australia. Five years ago the same household could afford about 43%. This is the lowest reading in the series, below the previous low of 14% set in 2007-08.",
+          "Victoria is the most affordable state on the measure. Even here, the figure is about 16%. The report ranks the six states; the territories are not in it.",
+          "The definition matters more than the number, so here it is in one line. A home counts as affordable if a household on about $125,000 could cover the repayments using no more than 30% of gross income, tested with a 2.5% buffer above the average new mortgage rate, assuming they already have a 20% deposit and the stamp duty saved.",
+          "Read that last clause twice. The measure tests whether a household can service the loan. It assumes the deposit is already in the bank. So 12% is not the share of homes within reach of a median-income household. It is the share they could repay if they had already saved the hardest part.",
+          "The part worth understanding is how prices and affordability moved in opposite directions at the same time. Home values have been softening. Affordability still got worse, because higher rates cut what a lender will advance well before they cut what a seller will accept.",
+          "For anyone selling a finished product, whether that is a townhouse, an apartment or a house and land package, the pool of buyers who can finance it has narrowed sharply. That is a feasibility question before it is a marketing one.",
+        ],
+        source:
+          "realestate.com.au, Housing Affordability Report, 5 September 2026. Published previously as the PropTrack Housing Affordability Report",
+        weekend: "Prices fell. Affordability got worse anyway.",
+        takes: {
+          owners:
+            "The pool of buyers who can finance a finished home has narrowed. Test the end value against who can borrow for it.",
+          designers:
+            "Budget conversations are arriving earlier. Stage the work so a client can pause without losing the project.",
+          builders:
+            "Enquiry may hold up better than conversion. Worth tracking which of the two is moving.",
+          brokers:
+            "Borrowing capacity is the binding constraint, not price. That is your conversation.",
+        },
+      },
+      {
+        n: "03",
+        kicker: "The Rate",
+        headline: "The hold is over. September is",
+        headlineAccent: "live again.",
+        stat: {
+          value: "29 Sept",
+          label: "the Reserve Bank’s next decision, announced at 2.30pm",
+          sub: "the cash rate is 4.35%",
+        },
+        chart: {
+          kind: "strip",
+          title: "Three weeks from here to the decision",
+          desc:
+            "The Reserve Bank signalled on 8 September that a rise may be required. The board meets over 28 and 29 September and announces the decision at 2.30pm on 29 September.",
+          stages: [
+            { label: "8 Sept · the Bank signals a rise is possible" },
+            { label: "28 Sept · the board meets, day one" },
+            { label: "29 Sept · the board meets, day two" },
+            { label: "2.30pm · the decision", accent: true },
+          ],
+          callout: {
+            from: 0,
+            to: 2,
+            label: "Three weeks",
+            sub: "the window to lock finance and check which quotes expire after it",
+          },
+          legend: { accent: "The decision", context: "The lead-up" },
+        },
+        body: [
+          "Speaking at the AFR Property Summit in Sydney on 8 September, Reserve Bank Assistant Governor (Economic) Sarah Hunter was asked about inflation. Her answer was direct: if inflation looks like running stronger than the Bank expects, “the Board may well have to raise interest rates to tackle that.”",
+          "The cash rate is 4.35%, held at the August meeting. The board next meets over 28 and 29 September, and announces the decision at 2.30pm on the second day.",
+          "This is a change in the story rather than a repeat of it. Through the middle of the year a further rise sat in the background as a risk. An assistant governor has now said out loud, three weeks before the meeting, that one may be required.",
+          "We are not printing a probability for the decision. The figures circulating trace back to secondary reporting rather than to a named instrument, and they move every day, so any single number you see is a snapshot rather than a forecast.",
+          "For anyone with finance that is not locked, or a builder’s price carrying a validity period that runs into October, the next three weeks matter more than the three months after them.",
+        ],
+        source:
+          "Reserve Bank of Australia, Fireside Chat at the AFR Property Summit, 8 September 2026. Transcript published by the RBA. Cash rate and meeting dates from RBA media releases",
+        weekend: "Three weeks to sort your finance.",
+        takes: {
+          owners:
+            "If your finance is not locked, the next three weeks matter. Confirm how long your approval holds.",
+          designers:
+            "Expect some clients to pause around the decision. Stage fee proposals so a pause does not stall the project.",
+          builders:
+            "Check which of your quotes carry a price validity period expiring after 29 September.",
+          brokers:
+            "These are your three weeks. Rate locks, serviceability re-runs and buffer conversations.",
+        },
+      },
+    ],
+    feature: {
+      kicker: "The Feature",
+      headline: "Most software reads the drawings. Ours argues with",
+      headlineAccent: "them.",
+      standfirst:
+        "Across seventeen projects it has read 2,621 pages, written 4,101 lines of scope, and found 59 places where two documents on the same job say different things. That last number is the one that matters.",
+      paragraphs: [
+        "Nine editions ago, in [Issue 001](/build-brief/issue-001), we wrote about three builder quotes that could not be compared, because they were not pricing the same work. Everything we have built since is an answer to that one sentence.",
+        "The answer is software that reads a project’s documents and writes the scope of works for it. It has now done that for seventeen projects. Here is what it does, and why it keeps getting better at it.",
+      ],
+      sections: [
+        {
+          heading: "It starts with an incomplete set. It always does.",
+          paragraphs: [
+            "No project arrives with everything. A town planning set is drawn to get a permit. A tender set is drawn to get a price. Most of what reaches us is the first kind, and it was never meant to carry a full scope.",
+            "Across those seventeen projects the software has read 125 documents and 2,621 pages: architectural drawings, engineering, soil reports, energy ratings, window schedules, specifications. It reads them together rather than one at a time, because a window schedule only means something beside the elevation it belongs to.",
+            "On the Brunswick extension [we covered in Issue 009](/build-brief/issue-009), the entire set was eleven pages. It still produced a full schedule.",
+          ],
+        },
+        {
+          heading: "Then it writes what the job needs.",
+          paragraphs: [
+            "From those pages it has produced 4,101 lines of scope. Only 2,460 of them came from the drawings. Another 1,259 were things the drawings never said, and were opened as questions. And 382 were ruled out, because they do not apply to that house.",
+            "The 382 is the number people skip past. Knowing what a job does not include is worth as much as knowing what it does, because every line a builder prices just in case is money an owner pays for nothing.",
+            "Not every question goes to the owner. The engine works out which ones a person can answer. Of the 1,259 opened, 593 have been settled so far. 152 of those were answered by a person, either the owner or the architect running the round. The other 441 were settled as work that the builder prices, so nobody was asked to specify something they were never going to know.",
+            "Every answer is visible to every builder in the round, so all of them price the same thing. That is the whole point, and it is the part a pile of PDFs in an email cannot do.",
+          ],
+        },
+        {
+          heading: "And then it argues with the documents.",
+          paragraphs: [
+            "Fifty-nine times so far, it has found two documents on the same project saying different things. An engineer’s detail against an architect’s level. A window schedule against an elevation. A specification calling up a product the drawings do not show.",
+            "These are ordinary. Every set of documents has them, on every job, in every practice. What is not ordinary is catching them before the work is priced rather than after it starts.",
+            "A conflict found at tender is a question. The same conflict found on site is a variation. The difference between those two words is a cost and a delay, and the owner pays for both.",
+          ],
+        },
+        {
+          heading: "Why it keeps getting stronger.",
+          paragraphs: [
+            "There is a model at the centre of this. But the model is not what makes the system work. Three other things do.",
+            "The first is that it reads the way a quantity surveyor reads, not the way a search engine reads. It is not hunting for words. It works out what a house of this type, on this site, under this state’s rules, has to include, and then checks the documents against that list. Which is why it can tell you about something that is missing.",
+            "The second is that it knows what it does not know. A line it cannot evidence in a document becomes a question, not a guess. One rule, and it is the reason the output can be trusted: nothing in the schedule is invented to fill a hole.",
+            "The third is that every project teaches it. When a completed run is checked line by line against the drawings it came from, whatever that check finds is written down and folded into how the next project is read. The most recent one produced fifteen changes. The measure of success is needing fewer of them each time.",
+          ],
+        },
+        {
+          heading: "Why it has to exist.",
+          paragraphs: [
+            "A home is the largest purchase most people ever make, and the only one where the price is set by a stack of documents nobody has read against each other.",
+            "We argued in [Issue 003](/build-brief/issue-003) that Australian construction does not have a building problem, it has a procurement problem. Builders are not the issue. The issue is that three of them are asked to price the same job from documents that do not say what the job is, and then the owner is handed three numbers and told to choose.",
+            "People use this because the questions get settled before anyone prices, and a class of surprise goes with them. Not because it is clever. Because the alternative is guessing, and the guess is settled on site.",
+          ],
+        },
+      ],
+      factBox: {
+        title: "The engine, to date",
+        rows: [
+          { k: "Projects run", v: "17" },
+          { k: "Documents read", v: "125" },
+          { k: "Pages read", v: "2,621" },
+          { k: "Scope lines written", v: "4,101" },
+          { k: "Evidenced in the documents", v: "2,460" },
+          { k: "Raised as questions", v: "1,259" },
+          { k: "Of those, settled so far", v: "593" },
+          { k: "Ruled out as not applicable", v: "382" },
+          { k: "Conflicts between documents", v: "59" },
+          { k: "Answered by a person", v: "152" },
+          { k: "Settled as builder-priced work", v: "441" },
+        ],
+      },
+      pullQuote:
+        "A conflict found at tender is a question. The same conflict found on site is a variation.",
+      source:
+        "BuilderHQ platform data, 11 September 2026. Figures cover every published scope run. The change count comes from our own line by line review of the most recent one. Projects are described in general terms and no party is named",
+      takes: {
+        owners:
+          "You do not need a finished set of drawings to get comparable prices. [Put a project up](/) and the open questions get settled before anyone quotes.",
+        designers:
+          "This is the work that used to land on you after the drawings were done. [See how it works for architects](/for/architects).",
+        builders:
+          "One list, one set of answers, everyone pricing the same job. [See what a tender looks like](/for/builders).",
+        brokers:
+          "A tender that settles its gaps and its conflicts before pricing gives you a contract sum with less room to move later.",
+      },
+    },
+    partnerCorner: {
+      partnerSlug: "architects-ring-associates",
+      headline:
+        "Meet Architects Ring & Associates, and the Canberra house that won its year.",
+      showLogo: true,
+      logo: "/partners/architects-ring-associates/logo.png",
+      stats: [
+        { value: "4.8", label: "Google rating", star: true },
+        { value: "1991", label: "Practice founded" },
+        { value: "100+", label: "Industry awards" },
+      ],
+      deck:
+        "In Canberra the site and the planning rules shape a house as much as the brief does.",
+      why: "Architects Ring & Associates is one of Canberra’s most awarded and most senior practices. It was founded in 1991 by Terence Ring, who has designed in the capital since 1975, and it works across custom homes, multi-unit and commercial projects, interiors and heritage. Few practices know the city’s sites and planning rules as closely.",
+      practice:
+        "A Kingston based architecture and interior design practice, working from a building it designed on Wentworth Avenue. Its architects are registered in the ACT and NSW. Alongside the residential work it takes on community and Indigenous housing, places of worship and an annual schools mentoring program. It designs around what it calls genius loci, the spirit of a place, and many of its houses are still owned by the clients who first commissioned them.",
+      welcome:
+        "A practice with that much Canberra behind it is exactly the kind we want in front of anyone planning a build in the capital.",
+      project: {
+        kicker: "The project",
+        name: "Tennyson Residence, Forrest",
+        deck:
+          "A 2,000 square metre house on a heritage block, planned as a single spine with the rooms hung off it, so every one of them gets sun, air, a view and a garden.",
+        paragraphs: [
+          "The clients wanted one house that could hold work, hobbies, family and extended family, and asked that the outside read like an airport building. The site set three constraints before anything was drawn: the width of the block, its fall, and two established trees, a Chinese elm at the front and a peppercorn at the rear.",
+          "The first sketch chased the northern sun and used the fall of the land to open views to Parliament House, the city and the airport. That produced a circulation spine running east to west. Off the spine the practice hung what it calls fingers, one for each zone: living, terrace, office, a double height entry void and sleeping. Gardens sit in between them, so every room takes light and cross ventilation, and every room looks at something growing.",
+          "The kitchen and family room are placed so that one person can watch the whole garden and the pool and still be in the room with everybody else. A roof terrace sits over the whole arrangement.",
+          "Terence Ring describes three things he believes any home should carry: the connection between a site and its nature, the management of light, air and sound, and genius loci, which he puts as the ambience inside a home and the feeling of being lifted by it.",
+        ],
+        hero: {
+          src: "/build-brief/issue-010/tennyson.webp",
+          alt: "The Tennyson Residence at Forrest, ACT, a long low house by Architects Ring & Associates, seen across its garden.",
+        },
+        credit:
+          "Image supplied by Architects Ring & Associates. Photography by H Creation.",
+        facts: [
+          { k: "Location", v: "Forrest, ACT" },
+          { k: "Type", v: "Single dwelling" },
+          { k: "Builder", v: "Manteena Group" },
+          { k: "Recognition", v: "Master Builders ACT House of the Year, 2021" },
+        ],
+        link: {
+          label: "See the project on Architects Ring & Associates",
+          href: "https://araa.com.au/portfolio/tennyson-residence/",
+        },
+      },
+    },
+    overToYou: {
+      question: "Ten editions in. What should the next ten cover?",
+      body: "Reply with a line. The topics readers ask about most decide where The Build Brief goes next.",
+    },
+    faq: [
+      {
+        q: "What is Victoria’s ten business day planning pathway?",
+        a: "Announced on 2 September 2026 by the Minister for Planning, Sonya Kilkenny, it is a fast-track assessment timeframe for developments of up to four homes on a single block. To use it, the application has to comply with the Townhouse and Low-Rise Code. The council still assesses the application; the pathway sets the timeframe and the entry test.",
+      },
+      {
+        q: "When does the four-home fast-track pathway start in Victoria?",
+        a: "A commencement date has not been gazetted. The announcement of 2 September 2026 states the government’s intention but does not name the day the pathway begins, and no amendment giving effect to it has been published. That date will decide which applications can use the pathway.",
+      },
+      {
+        q: "What happens if a design does not comply with the Townhouse and Low-Rise Code?",
+        a: "It loses access to the fast-track pathway and is assessed under the standard planning process, which can run past sixty days once assessment, paperwork and appeals are counted. That is why code compliance is a commercial decision at design stage, not only a design one.",
+      },
+      {
+        q: "What share of Australian homes can a median-income household afford in 2026?",
+        a: "About 12% of the homes sold, according to the realestate.com.au Housing Affordability Report published on 5 September 2026. Five years earlier the figure was about 43%. Victoria is the most affordable state at about 16%. The report ranks the six states and does not include the territories.",
+      },
+      {
+        q: "How does the realestate.com.au Housing Affordability Report define an affordable home?",
+        a: "In the realestate.com.au Housing Affordability Report of 5 September 2026, a home counts as affordable if a median-income household, on about $125,000 a year, could cover the mortgage repayments using no more than 30% of gross income, assessed with a 2.5% buffer above the most recent average new mortgage rate, and assuming a 20% deposit and the costs of purchasing are already saved. It measures loan serviceability, not whether a household can raise the deposit.",
+      },
+      {
+        q: "Why did affordability get worse while house prices were falling?",
+        a: "Because borrowing capacity fell faster than prices did. Higher interest rates reduce what a lender will advance well before they reduce what a seller will accept, so the amount a household can borrow shrinks faster than the asking price.",
+      },
+      {
+        q: "When is the next Reserve Bank interest rate decision?",
+        a: "The board meets over 28 and 29 September 2026 and announces the decision at 2.30pm on 29 September. The cash rate is 4.35%. Speaking at the AFR Property Summit on 8 September, Assistant Governor (Economic) Sarah Hunter said that if inflation looks like running stronger than the Bank expects, “the Board may well have to raise interest rates to tackle that.”",
+      },
+      {
+        q: "Can software write a scope of works from architectural drawings?",
+        a: "It can write most of one, and it should say where it cannot. Across seventeen projects on BuilderHQ the software has read 125 documents and 2,621 pages and produced 4,101 lines of scope. Of those, 2,460 were evidenced in the documents, 1,259 were opened as questions because the documents did not answer them, and 382 were ruled out as not applicable to the house.",
+      },
+      {
+        q: "What is a conflict between construction documents?",
+        a: "It is where two documents on the same project say different things: an engineer’s detail against an architect’s level, a window schedule against an elevation, or a specification calling up a product the drawings do not show. Across seventeen projects the software has flagged 59 of them. Found at tender a conflict is a question. Found on site it is a variation.",
+      },
+    ],
+    share:
+      "Victoria will have councils assess up to four homes on a block within ten business days if the design meets the Townhouse and Low-Rise Code. A median-income household can now afford 12% of homes sold, down from 43%. This week’s Build Brief.",
+    subscribeLine: "Five minutes, every Friday.",
+    furtherReading: [
+      {
+        label: "Issue 009: a regulator just described the problem we write about every week",
+        href: "/build-brief/issue-009",
+      },
+      {
+        label: "Issue 008: more work is coming, fewer people are learning to do it",
+        href: "/build-brief/issue-008",
+      },
+      {
+        label: "Issue 007: every Victorian reform date on one timeline",
+        href: "/build-brief/issue-007",
+      },
+      {
+        label: "Perspective: Australian construction has a procurement problem",
+        href: "/build-brief/perspectives/construction-procurement-standard",
+      },
+    ],
+    sourceGroups: [
+      {
+        heading: "The planning pathway",
+        links: [
+          {
+            label:
+              "Victorian Government, More Homes Built Faster For Working People, 2 September 2026",
+            href: "https://www.premier.vic.gov.au/more-homes-built-faster-working-people",
+          },
+          {
+            label: "Planning Victoria, Townhouse and Low-Rise Code",
+            href: "https://www.planning.vic.gov.au/guides-and-resources/guides/all-guides/residential-development/townhouse-and-low-rise-code",
+          },
+          {
+            label: "Planning Victoria, Faster approvals for two homes on a lot and subdivisions",
+            href: "https://www.planning.vic.gov.au/news/articles/faster-approvals-for-two-homes-on-a-lot-and-subdivisions",
+          },
+        ],
+      },
+      {
+        heading: "Affordability",
+        links: [
+          {
+            label: "realestate.com.au, Housing Affordability Report, 5 September 2026",
+            href: "https://rea3.irmau.com/site/pdf/0f970411-0e75-4b8f-969e-a8cae0324205/Platform/ListPage/realestatecomau-Housing-Affordability-Report-2026.pdf",
+          },
+        ],
+      },
+      {
+        heading: "The Reserve Bank",
+        links: [
+          {
+            label:
+              "Reserve Bank of Australia, Sarah Hunter, Fireside Chat at the AFR Property Summit, 8 September 2026",
+            href: "https://www.rba.gov.au/speeches/2026/sp-ag-2026-09-08.html",
+          },
+        ],
+      },
+      {
+        heading: "Partner Corner",
+        links: [
+          {
+            label: "Architects Ring & Associates, Tennyson Residence",
+            href: "https://araa.com.au/portfolio/tennyson-residence/",
+          },
+          {
+            label: "Architects Ring & Associates on the BuilderHQ register",
+            href: "/partners/architects-ring-associates",
+          },
+        ],
+      },
+    ],
+    creditLine:
+      "This edition used data and reporting from the Victorian Government, Planning Victoria, the Australian Bureau of Statistics, realestate.com.au, the Reserve Bank of Australia and Architects Ring & Associates. The Build Brief is compiled by BuilderHQ, Melbourne.",
+    sources: [
+      "the Victorian Government",
+      "Planning Victoria",
+      "the Australian Bureau of Statistics",
+      "realestate.com.au",
+      "the Reserve Bank of Australia",
+      "Architects Ring & Associates",
     ],
   },
   {
